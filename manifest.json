@@ -1,0 +1,29 @@
+{
+  "name": "The Holdover",
+  "short_name": "Holdover",
+  "description": "Load AB Quantum and GeoBallistics range cards onto The Holdover.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1d1f1c",
+  "theme_color": "#1d1f1c",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "files": [{
+        "name": "csv",
+        "accept": ["text/csv", "text/comma-separated-values", "application/csv", "text/plain",
+                   "application/vnd.ms-excel", "application/octet-stream", ".csv", ".txt"]
+      }]
+    }
+  }
+}

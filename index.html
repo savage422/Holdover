@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Holdover Loader</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1d1f1c">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: field tool, short labels
+   IDEA: the board's own controls, on the phone
+   PICTURE: one big Connect button that turns into the board's status strip
+   COLOUR and TYPE: black ink, paper white, coyote tan; Roboto Condensed
+   LAYOUT: one calm column, biggest action first */
+:root{color-scheme:light dark;--bg:light-dark(#ece7dc,#14130f);--card:light-dark(#fff,#211f18);--ink:light-dark(#151410,#ece7db);--tan:#6b5d45;--ok:#1f6f3a;--bad:#a12a1f}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 "Roboto Condensed",system-ui,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:32px;line-height:1.05;margin:4px 0 2px;font-weight:800}
+.sub{margin:0 0 14px;opacity:.75;font-size:15px}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:19px;margin:0 0 8px}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{width:100%;min-height:56px;border:0;border-radius:12px;background:#151410;color:#f2efe6;font-weight:800;font-size:20px;cursor:pointer}
+:root[data-theme=dark] .btn,.btn{}
+.btn.alt{background:var(--tan)}.btn.sm{min-height:44px;font-size:16px;width:auto;padding:0 16px}
+.btn:disabled{opacity:.4}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e09a20;outline-offset:2px}
+.ctl{width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:1px solid #8889;background:transparent;font-size:16px}
+label{display:block;font-weight:700;margin:10px 0 4px}
+.status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#151410;color:#f2efe6;font-weight:700;margin-bottom:12px}
+.dot{width:12px;height:12px;border-radius:50%;background:#888;flex:none}.dot.on{background:#3ecf6a}
+.msg{min-height:1.4em;margin-top:10px;font-weight:700}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+:root[data-theme=dark] .msg.ok{color:#5fd383}
+.slot{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #8883}
+.slot:first-child{border-top:0}.slot b{flex:1}
+.tag{font-size:13px;padding:2px 8px;border-radius:99px;background:#1514101a}
+.trow{display:grid;grid-template-columns:2.2em minmax(0,1fr) 92px;gap:6px;align-items:center;margin:5px 0}
+.bar{height:6px;border-radius:3px;background:#8883;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;width:0;background:var(--tan)}
+details summary{cursor:pointer;font-weight:700;margin-top:10px}
+small{opacity:.75}.hide{display:none}
+.pair{display:grid;gap:6px;margin-top:8px}.pf{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:#1514100d;font-size:15px}.pf b{min-width:5.2em}.ck{font-weight:800}.ck.ok{color:var(--ok)}.ck.no{color:var(--bad)}
+.note{font-size:15px;background:#e0a02022;border-radius:10px;padding:10px 12px}
+</style></head><body><div class="wrap">
+<h1>The Holdover</h1>
+<p class="sub">Send AB Quantum or GeoBallistics data to your board over Bluetooth. Two exports per rifle: wind at 270&deg; and at 90&deg;.</p>
+
+<div id="nobt" class="card note hide">Bluetooth from a web page needs <b>Chrome on Android</b>. On iPhone use the free <b>Bluefy</b> browser, or on the board go to SETUP &rarr; WI-FI and scan the QR code.</div>
+
+<div class="status"><span class="dot" id="dot"></span><span id="stat">Not connected</span></div>
+<div id="ready" class="card hide" style="margin:10px 0"></div>
+<button class="btn" id="conn">Connect to board</button>
+
+<div id="main" class="hide">
+ <div class="card" style="margin-top:12px"><h2>Load ballistic data</h2>
+  <small>Pick a slot, name the rifle, then pick both files.</small>
+  <label for="slot">Slot</label>
+  <select class="ctl" id="slot"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option></select>
+  <label for="nm">Name on the board</label><input class="ctl" id="nm" maxlength="20" placeholder="6mm 108 ELD">
+  <label for="f">Both CSV files</label>
+  <small>Export the range card twice at the same wind speed: wind at <b>270&deg;</b>, then flip it to <b>90&deg;</b>. Fastest: in AB or GeoBallistics tap Share &rarr; <b>The Holdover</b> for each export. Or save both and pick them here (long-press the first, tap the second).</small>
+  <input class="ctl" type="file" id="f" multiple accept=".csv,text/csv,text/plain" style="margin-top:6px">
+  <div id="pair" class="pair"></div>
+  <button class="btn" id="send" style="margin-top:14px">Send to board</button>
+  <div class="bar"><i id="prog"></i></div><div class="msg" id="msg"></div>
+ </div>
+
+ <div class="card"><h2>Rifles on the board</h2><div id="slots"></div>
+  <small>USE = your rifle. PARTNER = shown under yours for spotting.</small></div>
+
+ <div class="card"><h2>Stage targets</h2><div id="tg"></div>
+  <button class="btn alt" id="sendT" style="margin-top:8px">Send targets</button><div class="msg" id="msgT"></div></div>
+
+ <div class="card"><h2>Dope table</h2>
+  <div class="trow" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+   <input class="ctl" id="ts" inputmode="numeric" placeholder="from"><input class="ctl" id="te" inputmode="numeric" placeholder="to"><input class="ctl" id="tp" inputmode="numeric" placeholder="every">
+  </div><button class="btn alt sm" id="sendTbl">Save table</button><div class="msg" id="msgTbl"></div></div>
+</div>
+</div>
+<script>
+{
+const SVC='6e400001-d0be-4b0a-9d1d-d0be0a5d0001',RX='6e400002-d0be-4b0a-9d1d-d0be0a5d0001',TX='6e400003-d0be-4b0a-9d1d-d0be0a5d0001';
+const $=id=>document.getElementById(id);
+let dev=null,rx=null,tx=null,acc='',waiters=[],st=null;
+const enc=new TextEncoder();
+if(!navigator.bluetooth){$('nobt').classList.remove('hide');$('conn').disabled=true}
+
+function setStat(on,t){$('dot').classList.toggle('on',on);$('stat').textContent=t}
+function show(id,t,ok){const m=$(id);m.textContent=t;m.className='msg '+(ok?'ok':'bad')}
+
+function onNotify(e){acc+=new TextDecoder().decode(e.target.value);let i;
+  while((i=acc.indexOf('\n'))>=0){const line=acc.slice(0,i);acc=acc.slice(i+1);
+    if(line.startsWith('STATE|')){try{st=JSON.parse(line.slice(6));render()}catch(_){}}
+    const w=waiters.shift();if(w)w(line)}}
+function waitReply(ms=15000){return new Promise((res)=>{const t=setTimeout(()=>res('ERR|No reply from board'),ms);waiters.push(l=>{clearTimeout(t);res(l)})})}
+async function write(bytes){await rx.writeValueWithResponse(bytes)}
+async function cmd(s,expect=true){const p=expect?waitReply():null;await write(enc.encode(s));return p}
+
+async function connect(){
+  try{
+    setStat(false,'Searching...');
+    dev=await navigator.bluetooth.requestDevice({filters:[{services:[SVC]}],optionalServices:[SVC]});
+    dev.addEventListener('gattserverdisconnected',()=>{setStat(false,'Disconnected - tap Connect');$('conn').classList.remove('hide')});
+    const srv=await dev.gatt.connect();const s=await srv.getPrimaryService(SVC);
+    rx=await s.getCharacteristic(RX);tx=await s.getCharacteristic(TX);
+    await tx.startNotifications();tx.addEventListener('characteristicvaluechanged',onNotify);
+    setStat(true,'Connected to '+(dev.name||'board'));$('conn').classList.add('hide');$('main').classList.remove('hide');$('ready').classList.add('hide');
+    await cmd('Q');
+  }catch(e){setStat(false,'Not connected: '+(e.message||e))}
+}
+$('conn').onclick=connect;
+
+async function sendBlob(kind,slot,part,name,text,bar){
+  const data=enc.encode(text);name=(name||'').replace(/[|\n]/g,' ').slice(0,20);
+  await write(enc.encode(`B${kind}|${slot}|${part}|${name}|${data.length}`));
+  const CH=180;
+  for(let i=0;i<data.length;i+=CH){const c=new Uint8Array(1+Math.min(CH,data.length-i));c[0]=68;c.set(data.subarray(i,i+CH),1);
+    await write(c);if(bar)bar.style.width=Math.round(100*(i+CH)/data.length)+'%'}
+  return cmd('E');
+}
+// Read wind speed + direction from a file's header (AB Quantum or GeoBallistics)
+function meta(text){text=text.replace(/^﻿/,'');
+  let mph=NaN,clock=NaN,app='AB',name=text.split(/\r?\n/)[0].split(',')[0].trim();
+  let m=text.match(/Windspeed \[MPH\],\s*([\d.]+)/);if(m)mph=+m[1];
+  m=text.match(/Wind Direction,\s*(\d+):(\d+)/);if(m)clock=+m[1]+(+m[2])/60;
+  const g=text.match(/^Wind,\s*([\d.]+)\s*mph\s*@\s*([\d.]+)/m);
+  if(g){app='GEO';mph=+g[1];const b=(text.match(/Shot Bearing,\s*([\d.]+)/)||[0,0])[1];clock=(((+g[2]-b)%360)+360)%360/30;if(clock<.5)clock+=12;
+    const r=text.match(/^Rifle,(.*)$/m);if(r)name=r[1].trim()}
+  const side=isNaN(clock)?0:Math.sign(Math.round(Math.sin(clock*Math.PI/6)*100));   // -1 from left (9), +1 from right (3)
+  return{mph,clock,app,name,side}}
+let picked=[];
+const clk=c=>isNaN(c)?'?':`${Math.round(c*30)%360}°`;   // clock hours -> degrees (9:00 = 270°)
+// Files can arrive three ways: the file picker, the Android share sheet (one export at a time),
+// or saved from an earlier share. Keep the newest file for each side (270 / 90) until sent.
+const PKEY='holdover_pending';
+function savePending(){try{localStorage.setItem(PKEY,JSON.stringify(picked.map(p=>({n:p.n,t:p.t}))))}catch(e){}}
+function loadPending(){try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]}}
+function addTexts(items,replaceAll){
+  if(replaceAll)picked=[];
+  for(const it of items){const m=meta(it.t);
+    if(m.side!=0)picked=picked.filter(p=>p.m.side!=m.side);   // newer file for that side wins
+    picked.push({n:it.n,t:it.t,m});}
+  picked=picked.slice(-2);savePending();showPair()}
+function showPair(){
+  picked.sort((a,b)=>a.m.side-b.m.side);                 // 270 (left) first
+  const okPair=picked.length==2&&picked[0].m.side==-1&&picked[1].m.side==1;
+  const need=!picked.length?'':picked.length<2?`<div class="ck no">Got ${picked[0].m.side<0?'270°':picked[0].m.side>0?'90°':'one file'}. Now share the ${picked[0].m.side<0?'90°':'270°'} export.</div>`:'';
+  $('pair').innerHTML=picked.map(p=>`<div class="pf"><b>${p.m.side<0?'270° (left)':p.m.side>0?'90° (right)':'no crosswind'}</b><span>${p.m.mph} mph at ${clk(p.m.clock)} · ${p.m.app}</span></div>`).join('')+
+    (need||(picked.length<2?'':okPair?(picked[0].m.mph==picked[1].m.mph?'<div class="ck ok">Pair OK</div>':'<div class="ck no">Speeds differ: works, but same speed is best</div>'):
+     '<div class="ck no">Need one file with wind at 270° (left) and one at 90° (right)</div>'))+
+    (picked.length?'<button class="btn alt sm" id="clrPair" type="button">Clear files</button>':'');
+  if($('clrPair'))$('clrPair').onclick=()=>{picked=[];savePending();showPair()};
+  if(!$('nm').value&&picked[0])$('nm').value=picked[0].m.name.slice(0,20);
+  $('send').disabled=!okPair;
+  const rd=$('ready');if(rd){const on=$('main').classList.contains('hide')&&picked.length;rd.classList.toggle('hide',!on);
+    rd.innerHTML=on?(okPair?'<b>Pair ready.</b> Connect to the board, then tap Send.':`<b>${picked.length} of 2 files.</b> `+(picked.length==1?`Share the ${picked[0].m.side<0?'90°':'270°'} export next.`:'Check the files below after connecting.')):''}
+}
+$('f').addEventListener('change',async()=>{
+  const items=[];for(const f of [...$('f').files].slice(0,2))items.push({n:f.name,t:await f.text()});
+  addTexts(items,items.length==2);
+});
+async function takeShared(){                             // files the service worker caught from the share sheet
+  let items=[];
+  try{const c=await caches.open('holdover-share');
+    for(const k of await c.keys()){const r=await c.match(k);items.push({n:decodeURIComponent(k.url.split('/').pop()),t:await r.text()});await c.delete(k)}}catch(e){}
+  return items.filter(i=>/Range|Rifle,|Wind/.test(i.t));
+}
+(async()=>{
+  const prev=loadPending();if(prev.length)addTexts(prev,true);
+  if(/[?&]share=/.test(location.search)){
+    const got=await takeShared();
+    history.replaceState(null,'',location.pathname);
+    if(got.length)addTexts(got,false);
+    else show('msg','Shared item had no CSV range card. Export as CSV and share the file.',false);
+  }
+})();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+$('send').disabled=true;
+$('send').onclick=async()=>{
+  if(picked.length!=2)return show('msg','Pick both files: wind at 270° and at 90°',false);
+  $('send').disabled=true;$('prog').style.width='0';
+  const slot=$('slot').value,name=$('nm').value.trim();
+  let r=await sendBlob('F',slot,1,name,picked[0].t,$('prog'));
+  if(r.startsWith('OK')){$('prog').style.width='0';const r2=await sendBlob('F',slot,2,name,picked[1].t,$('prog'));r=r2.startsWith('OK')?r2:r+' | '+r2}
+  show('msg',r.replace(/^(OK|ERR)\|/,'').replace(/\| (OK|ERR)\|/,'| '),r.startsWith('OK')&&!/not used|WARNING/.test(r));
+  if(r.startsWith('OK')){picked=[];savePending();showPair()}
+  $('send').disabled=picked.length!=2;await cmd('Q');
+};
+
+function render(){if(!st)return;
+  $('slots').innerHTML=st.slots.map((n,i)=>`<div class="slot"><b>${i+1}. ${n?esc(n):'<span style="opacity:.5">empty</span>'}</b>`+
+    (i==st.active?'<span class="tag">MY RIFLE</span>':i==st.partner?`<span class="tag">PARTNER</span><button class="btn alt sm" data-p="-1">Off</button>`:
+     n?`<button class="btn sm" data-u="${i}">USE</button><button class="btn alt sm" data-p="${i}">PARTNER</button>`:'')+'</div>').join('');
+  let h='';for(let i=0;i<10;i++){const t=st.targets[i]||{n:'',y:''};
+    h+=`<div class="trow"><b>T${i+1}</b><input class="ctl" id="tn${i}" maxlength="12" value="${esc(t.n)}" placeholder="name"><input class="ctl" id="ty${i}" inputmode="numeric" value="${t.y}" placeholder="yds"></div>`}
+  $('tg').innerHTML=h;$('ts').value=st.ts;$('te').value=st.te;$('tp').value=st.tp}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+$('slots').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.u!=null)await cmd('U'+b.dataset.u);if(b.dataset.p!=null)await cmd('P'+b.dataset.p);await cmd('Q')});
+$('sendT').onclick=async()=>{let b='';for(let i=0;i<10;i++){const n=$('tn'+i).value.replace(/[,\n|]/g,' ').trim(),y=parseInt($('ty'+i).value);if(y>0)b+=(n||'T'+(i+1))+','+y+'\n'}
+  const r=await sendBlob('T',0,0,'',b);show('msgT',r.replace(/^(OK|ERR)\|/,''),r.startsWith('OK'));await cmd('Q')};
+$('sendTbl').onclick=async()=>{const r=await cmd(`S${$('ts').value}|${$('te').value}|${$('tp').value}`);show('msgTbl',r.replace(/^(OK|ERR)\|/,''),r.startsWith('OK'))};
+}
+</script></body></html>
