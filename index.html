@@ -71,6 +71,13 @@ small{opacity:.75}.hide{display:none}
  <div class="card"><h2>Stage targets</h2><div id="tg"></div>
   <button class="btn alt" id="sendT" style="margin-top:8px">Send targets</button><div class="msg" id="msgT"></div></div>
 
+ <div class="card"><h2>Update board software</h2>
+  <small>Pick the <b>firmware.bin</b> file you were sent. Keep the phone next to the board until it restarts.</small>
+  <div id="ver" style="margin-top:6px;font-weight:700"></div>
+  <input class="ctl" type="file" id="fw" accept=".bin,application/octet-stream" style="margin-top:6px">
+  <button class="btn alt" id="sendFw" style="margin-top:10px">Install update</button>
+  <div class="bar"><i id="fwprog"></i></div><div class="msg" id="msgFw"></div></div>
+
  <div class="card"><h2>Dope table</h2>
   <div class="trow" style="grid-template-columns:repeat(3,minmax(0,1fr))">
    <input class="ctl" id="ts" inputmode="numeric" placeholder="from"><input class="ctl" id="te" inputmode="numeric" placeholder="to"><input class="ctl" id="tp" inputmode="numeric" placeholder="every">
@@ -81,7 +88,7 @@ small{opacity:.75}.hide{display:none}
 {
 const SVC='6e400001-d0be-4b0a-9d1d-d0be0a5d0001',RX='6e400002-d0be-4b0a-9d1d-d0be0a5d0001',TX='6e400003-d0be-4b0a-9d1d-d0be0a5d0001';
 const $=id=>document.getElementById(id);
-let dev=null,rx=null,tx=null,acc='',waiters=[],st=null;
+let dev=null,rx=null,tx=null,acc='',waiters=[],st=null,otaAck=0,otaFail='';
 const enc=new TextEncoder();
 if(!navigator.bluetooth){$('nobt').classList.remove('hide');$('conn').disabled=true}
 
@@ -91,6 +98,8 @@ function show(id,t,ok){const m=$(id);m.textContent=t;m.className='msg '+(ok?'ok'
 function onNotify(e){acc+=new TextDecoder().decode(e.target.value);let i;
   while((i=acc.indexOf('\n'))>=0){const line=acc.slice(0,i);acc=acc.slice(i+1);
     if(line.startsWith('STATE|')){try{st=JSON.parse(line.slice(6));render()}catch(_){}}
+    if(line.startsWith('OTA|ACK|')){otaAck=parseInt(line.slice(8))||otaAck;continue}   // update progress, not a reply
+    if(line.startsWith('OTA|ERR|'))otaFail=line.slice(8);
     const w=waiters.shift();if(w)w(line)}}
 function waitReply(ms=15000){return new Promise((res)=>{const t=setTimeout(()=>res('ERR|No reply from board'),ms);waiters.push(l=>{clearTimeout(t);res(l)})})}
 async function write(bytes){await rx.writeValueWithResponse(bytes)}
@@ -188,6 +197,7 @@ $('send').onclick=async()=>{
 };
 
 function render(){if(!st)return;
+  $('ver').textContent=st.ver?'This board: v'+st.ver:'';
   $('slots').innerHTML=st.slots.map((n,i)=>`<div class="slot"><b>${i+1}. ${n?esc(n):'<span style="opacity:.5">empty</span>'}</b>`+
     (i==st.active?'<span class="tag">MY RIFLE</span>':i==st.partner?`<span class="tag">PARTNER</span><button class="btn alt sm" data-p="-1">Off</button>`:
      n?`<button class="btn sm" data-u="${i}">USE</button><button class="btn alt sm" data-p="${i}">PARTNER</button>`:'')+'</div>').join('');
@@ -199,6 +209,37 @@ $('slots').addEventListener('click',async e=>{const b=e.target.closest('button')
   if(b.dataset.u!=null)await cmd('U'+b.dataset.u);if(b.dataset.p!=null)await cmd('P'+b.dataset.p);await cmd('Q')});
 $('sendT').onclick=async()=>{let b='';for(let i=0;i<10;i++){const n=$('tn'+i).value.replace(/[,\n|]/g,' ').trim(),y=parseInt($('ty'+i).value);if(y>0)b+=(n||'T'+(i+1))+','+y+'\n'}
   const r=await sendBlob('T',0,0,'',b);show('msgT',r.replace(/^(OK|ERR)\|/,''),r.startsWith('OK'));await cmd('Q')};
+// Software update over Bluetooth: send firmware.bin in chunks; the board acks every 4 KB so we never run too far ahead.
+$('sendFw').onclick=async()=>{
+  const f=$('fw').files[0],bar=$('fwprog');
+  if(!f)return show('msgFw','Pick the firmware.bin file first',false);
+  if(!/\.bin$/i.test(f.name)||/factory/i.test(f.name))return show('msgFw','Wrong file: use firmware.bin (not the factory file)',false);
+  const data=new Uint8Array(await f.arrayBuffer());
+  if(data[0]!==0xE9)return show('msgFw','That is not a Holdover program file',false);
+  $('sendFw').disabled=true;otaAck=0;otaFail='';bar.style.width='0%';
+  const t0=Date.now();
+  try{
+    show('msgFw','Starting... (the board shows UPDATING SOFTWARE)',true);
+    const r=await cmd('O'+data.length);
+    if(!r.startsWith('OTA|GO'))throw new Error(r.replace(/^OTA\|ERR\|/,'').replace(/^ERR\|/,''));
+    let CH=240,i=0;const WIN=16384;
+    while(i<data.length){
+      if(otaFail)throw new Error(otaFail);
+      if(i-otaAck>WIN){await new Promise(r=>setTimeout(r,5));continue}
+      const n=Math.min(CH,data.length-i),c=new Uint8Array(1+n);c[0]=87;c.set(data.subarray(i,i+n),1);   // 'W'
+      try{await rx.writeValueWithoutResponse(c)}
+      catch(e){if(CH>20){CH=CH>180?180:20;continue}throw e}   // phone link too small for big pieces: go smaller
+      i+=n;
+      if((i/CH|0)%20==0){bar.style.width=Math.round(100*i/data.length)+'%';
+        show('msgFw','Sending '+Math.round(100*i/data.length)+'%  - keep the phone close',true)}
+    }
+    bar.style.width='100%';show('msgFw','Checking...',true);
+    const z=await cmd('Z',true);
+    if(!z.startsWith('OTA|DONE'))throw new Error(z.replace(/^OTA\|ERR\|/,''));
+    show('msgFw','Installed in '+Math.round((Date.now()-t0)/1000)+' s. The board is restarting - reconnect in about 10 seconds.',true);
+  }catch(e){try{await write(enc.encode('X'))}catch(_){}
+    show('msgFw','Update failed: '+(e.message||e)+'. The board is still on the old version.',false)}
+  $('sendFw').disabled=false};
 $('sendTbl').onclick=async()=>{const r=await cmd(`S${$('ts').value}|${$('te').value}|${$('tp').value}`);show('msgTbl',r.replace(/^(OK|ERR)\|/,''),r.startsWith('OK'))};
 }
 </script></body></html>
