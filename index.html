@@ -72,7 +72,7 @@ small{opacity:.75}.hide{display:none}
   <button class="btn alt" id="sendT" style="margin-top:8px">Send targets</button><div class="msg" id="msgT"></div></div>
 
  <div class="card"><h2>Update board software</h2>
-  <small>Pick the <b>firmware.bin</b> file you were sent. Keep the phone next to the board until it restarts.</small>
+  <small>Pick the <b>firmware_signed.bin</b> file you were sent. Keep the phone next to the board until it restarts.</small>
   <div id="ver" style="margin-top:6px;font-weight:700"></div>
   <input class="ctl" type="file" id="fw" accept=".bin,application/octet-stream" style="margin-top:6px">
   <button class="btn alt" id="sendFw" style="margin-top:10px">Install update</button>
@@ -212,10 +212,12 @@ $('sendT').onclick=async()=>{let b='';for(let i=0;i<10;i++){const n=$('tn'+i).va
 // Software update over Bluetooth: send firmware.bin in chunks; the board acks every 4 KB so we never run too far ahead.
 $('sendFw').onclick=async()=>{
   const f=$('fw').files[0],bar=$('fwprog');
-  if(!f)return show('msgFw','Pick the firmware.bin file first',false);
-  if(!/\.bin$/i.test(f.name)||/factory/i.test(f.name))return show('msgFw','Wrong file: use firmware.bin (not the factory file)',false);
+  if(!f)return show('msgFw','Pick the firmware_signed.bin file first',false);
+  if(!/\.bin$/i.test(f.name)||/factory/i.test(f.name))return show('msgFw','Wrong file: use firmware_signed.bin',false);
   const data=new Uint8Array(await f.arrayBuffer());
-  if(data[0]!==0xE9)return show('msgFw','That is not a Holdover program file',false);
+  const signed=new TextDecoder().decode(data.subarray(0,8))==='HOLDSIG1';
+  if(!signed&&data[0]!==0xE9)return show('msgFw','That is not a Holdover update file',false);
+  if(!signed)return show('msgFw','That file is not signed - use firmware_signed.bin',false);
   $('sendFw').disabled=true;otaAck=0;otaFail='';bar.style.width='0%';
   const t0=Date.now();
   try{
