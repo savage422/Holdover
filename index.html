@@ -234,6 +234,10 @@ video#cam{width:100%;border-radius:16px;background:#000;max-height:300px;object-
   <label class="file" for="fw" id="fwLbl">Tap to pick the firmware_signed.bin file you were sent</label>
   <input type="file" id="fw" accept=".bin,application/octet-stream" class="hide">
   <div class="tip">Keep the phone next to the board until it restarts. Takes about 30 seconds.</div>
+  <div class="lbl">Board log (newest first)</div>
+  <pre class="tip" id="blog" style="white-space:pre-wrap;font:13px/1.45 ui-monospace,monospace;margin-top:0;user-select:text">—</pre>
+  <button class="btn2" id="blogCopy" style="width:100%">Copy log</button>
+  <div style="height:16px"></div>
  </div>
  <div class="foot"><button class="btn" id="sendFw">Install update</button><div class="bar"><i id="fwprog"></i></div><div class="msg" id="msgFw" role="status"></div></div>
 </section>
@@ -484,6 +488,7 @@ function render(){if(!st)return;
   $('pOn').checked=p>=0;$('pOn').disabled=!pn;
   $('pLoad').textContent=pn?'Replace':'Load';
   $('tRc').textContent=st.card?'On board: '+st.card:(cards.length?cards.length+' saved':'None yet');
+  $('blog').textContent=(st.log&&st.log.length)?st.log.slice().reverse().join('\n'):'No log yet (needs board v0.9.21).';
   $('bver').textContent=st.ver?'Software v'+st.ver:'';$('tSw').textContent=st.ver?'v'+st.ver:'—';$('ver').textContent=st.ver?'v'+st.ver:'Unknown';
   const nT=(st.targets||[]).filter(t=>t&&+t.y>0).length;$('tTg').textContent=nT?nT+' set':'None set';
   $('tTb').textContent=st.ts?`${st.ts}–${st.te} / ${st.tp}`:'—';
@@ -735,6 +740,8 @@ $('imFile').onchange=async()=>{const f=$('imFile').files[0];$('imFile').value=''
 // opened from a shared link: <app>#c=...
 if(/#c=[zp]/.test(location.hash)){const code=location.hash;history.replaceState(null,'',location.pathname+location.search);
   setTimeout(async()=>{const e=await importCardText(code,true);if(e){$('cstat').textContent=e}},0)}
+
+$('blogCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('blog').textContent);show('msgFw','Log copied',true)}catch(_){show('msgFw','Press and hold the log to copy it',false)}};
 
 // ---------- software update over Bluetooth ----------
 // Send firmware_signed.bin in pieces; the board acks every 4 KB so we never run too far ahead.
