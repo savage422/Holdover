@@ -1,146 +1,345 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Holdover Loader</title>
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1d1f1c">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Holdover</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#111210">
 <link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800&family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* VOICE: field tool, short labels
-   IDEA: the board's own controls, on the phone
-   PICTURE: one big Connect button that turns into the board's status strip
-   COLOUR and TYPE: black ink, paper white, coyote tan; Roboto Condensed
-   LAYOUT: one calm column, biggest action first */
-:root{color-scheme:light dark;--bg:light-dark(#ece7dc,#14130f);--card:light-dark(#fff,#211f18);--ink:light-dark(#151410,#ece7db);--tan:#6b5d45;--ok:#1f6f3a;--bad:#a12a1f}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+/* The Holdover phone app. Dark graphite, coyote tan, stencil wordmark. One job per screen. */
+:root{color-scheme:dark;--bg:#111210;--card:#1A1B18;--card2:#23251F;--line:#2C2D29;--ink:#EEEBE3;--mut:#A9A497;--acc:#C9A66B;--ok:#7FD69B;--bad:#F08A7E;
+  --cond:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;--sten:"Big Shoulders Stencil Display","Barlow Condensed",sans-serif}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 "Roboto Condensed",system-ui,sans-serif}
-.wrap{max-width:560px;margin:0 auto;padding:16px 14px 40px}
-h1{font-size:32px;line-height:1.05;margin:4px 0 2px;font-weight:800}
-.sub{margin:0 0 14px;opacity:.75;font-size:15px}
-.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px}
-h2{font-size:19px;margin:0 0 8px}
-button,input,select,textarea{font:inherit;color:inherit}
-.btn{width:100%;min-height:56px;border:0;border-radius:12px;background:#151410;color:#f2efe6;font-weight:800;font-size:20px;cursor:pointer}
-:root[data-theme=dark] .btn,.btn{}
-.btn.alt{background:var(--tan)}.btn.sm{min-height:44px;font-size:16px;width:auto;padding:0 16px}
-.btn:disabled{opacity:.4}
-.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e09a20;outline-offset:2px}
-.ctl{width:100%;min-height:48px;padding:10px 12px;border-radius:10px;border:1px solid #8889;background:transparent;font-size:16px}
-label{display:block;font-weight:700;margin:10px 0 4px}
-.status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#151410;color:#f2efe6;font-weight:700;margin-bottom:12px}
-.dot{width:12px;height:12px;border-radius:50%;background:#888;flex:none}.dot.on{background:#3ecf6a}
-.msg{min-height:1.4em;margin-top:10px;font-weight:700}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
-:root[data-theme=dark] .msg.ok{color:#5fd383}
-.slot{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #8883}
-.slot:first-child{border-top:0}.slot b{flex:1}
-.tag{font-size:13px;padding:2px 8px;border-radius:99px;background:#1514101a}
-.trow{display:grid;grid-template-columns:2.2em minmax(0,1fr) 92px;gap:6px;align-items:center;margin:5px 0}
-.bar{height:6px;border-radius:3px;background:#8883;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;width:0;background:var(--tan)}
-details summary{cursor:pointer;font-weight:700;margin-top:10px}
-small{opacity:.75}.hide{display:none}
-.pair{display:grid;gap:6px;margin-top:8px}.pf{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:#1514100d;font-size:15px}.pf b{min-width:5.2em}.ck{font-weight:800}.ck.ok{color:var(--ok)}.ck.no{color:var(--bad)}
-.note{font-size:15px;background:#e0a02022;border-radius:10px;padding:10px 12px}
-</style></head><body><div class="wrap">
-<h1>The Holdover</h1>
-<p class="sub">Send AB Quantum or GeoBallistics data to your board over Bluetooth. Two exports per rifle: wind at 270&deg; and at 90&deg;.</p>
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Barlow,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+.view{display:flex;flex-direction:column;flex:1;min-height:100dvh}
+.hide{display:none!important}
+.pad{padding:0 20px}
+.lbl{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:1.6px;color:var(--mut);margin:22px 0 10px;text-transform:uppercase}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.btn{width:100%;min-height:60px;border:0;border-radius:16px;background:var(--acc);color:#111210;font-family:var(--cond);font-weight:800;font-size:22px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;text-transform:uppercase}
+.btn:disabled{opacity:.35;cursor:default}
+.btn2{min-height:44px;padding:0 16px;border-radius:12px;border:0;background:#2A2B26;color:var(--ink);font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.btn2.ghost{background:transparent;border:1px solid var(--line)}
+.icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.icon.bare{border:0;background:transparent}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.foot{position:sticky;bottom:0;margin-top:auto;padding:14px 20px calc(22px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid #22231F}
+.msg{min-height:1.4em;margin:10px 0 0;font-weight:600;font-size:15px}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .15s}
+/* top bars */
+.top{display:flex;align-items:center;justify-content:space-between;padding:calc(18px + env(safe-area-inset-top)) 20px 12px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--sten);font-weight:800;font-size:26px;letter-spacing:1.5px;line-height:1}
+.sub{display:flex;align-items:center;gap:6px;padding:calc(16px + env(safe-area-inset-top)) 12px 6px}
+.sub h1{margin:0;font-family:var(--cond);font-weight:800;font-size:28px;letter-spacing:.5px}
+/* connect screen */
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:calc(56px + env(safe-area-inset-top)) 24px 0}
+.hero .the{margin-top:24px;font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:3px;color:var(--mut)}
+.hero .word{font-family:var(--sten);font-weight:800;font-size:clamp(44px,15vw,64px);line-height:.95;letter-spacing:2px}
+.hero p{margin:10px 0 0;color:var(--mut);font-size:17px;max-width:290px}
+.steps{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps li{display:flex;align-items:center;gap:12px}
+.steps span{width:28px;height:28px;border-radius:50%;border:1px solid #3A3B35;display:flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:800;color:var(--acc);flex:none}
+.note{font-size:14px;color:var(--mut);text-align:center;margin-top:14px}
+.chip{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:15px;margin-bottom:14px}
+.warn{background:#3a2c1422;border-color:#6b5426}
+#cstat{min-height:1.4em;margin-bottom:10px;text-align:center;color:var(--mut);font-size:15px}
+/* home */
+.board{display:flex;align-items:center;gap:14px}
+.badge{width:52px;height:52px;border-radius:14px;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none}
+.live{display:flex;align-items:center;gap:6px;font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:1.2px;color:var(--ok)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.bname{font-family:var(--cond);font-weight:800;font-size:22px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.small{font-size:14px;color:var(--mut)}
+.rifle{display:flex;align-items:center;gap:12px}.rifle.mine{border-color:var(--acc)}
+.tag{display:inline-block;padding:3px 9px;border-radius:99px;background:#2A2B26;font-family:var(--cond);font-weight:800;font-size:12px;letter-spacing:1.2px}
+.mine .tag{background:var(--acc);color:#111210}
+.rname{margin-top:8px;font-family:var(--cond);font-weight:800;font-size:28px;line-height:1.05;word-break:break-word}
+.rname.empty{color:var(--mut);font-weight:700;font-size:22px}
+.sw{margin-top:10px;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--mut);cursor:pointer}
+.sw input{appearance:none;width:44px;height:26px;border-radius:13px;background:#3A3B35;position:relative;margin:0;cursor:pointer;flex:none;transition:background .15s}
+.sw input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--ink);transition:left .15s}
+.sw input:checked{background:var(--acc)}.sw input:checked::after{left:21px;background:#111210}
+.sw input:disabled{opacity:.4}
+.stack{display:flex;flex-direction:column;gap:10px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{text-align:left;padding:14px 12px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:10px}
+.tile b{font-family:var(--cond);font-weight:800;font-size:19px;line-height:1}
+.tile span{font-size:13px;color:var(--mut)}
+.other{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.other:first-child{border-top:0}
+.other b{flex:1;font-family:var(--cond);font-size:19px}
+/* load */
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:5px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.seg button{min-height:48px;border:0;border-radius:12px;background:transparent;font-family:var(--cond);font-weight:700;font-size:19px;letter-spacing:.5px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--acc);color:#111210;font-weight:800}
+.field{width:100%;min-height:56px;padding:0 16px;border-radius:14px;border:1px solid #3A3B35;background:var(--card);font-family:var(--cond);font-weight:700;font-size:22px}
+.files{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ftile{padding:14px;border-radius:16px;border:1px dashed #4A4B44;background:var(--card);cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:118px}
+.ftile.got{border:1px solid var(--ok)}
+.ftile .deg{display:flex;align-items:center;justify-content:space-between;font-family:var(--cond);font-weight:800;font-size:26px;line-height:1}
+.ftile .fn{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tip{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--card);font-size:14px;color:var(--mut)}
+.tip b{color:var(--ink);font-weight:600}
+.check{font-size:14px;font-weight:600;margin-bottom:8px;min-height:1.4em}.check.ok{color:var(--ok)}.check.no{color:var(--bad)}.check.wait{color:var(--mut)}
+.linkbtn{background:none;border:0;color:var(--acc);font-weight:600;font-size:14px;padding:6px 0;cursor:pointer}
+/* targets / table */
+.trow{display:grid;grid-template-columns:2.4em minmax(0,1fr) 96px;gap:8px;align-items:center;margin:0 0 8px}
+.trow b{font-family:var(--cond);font-weight:800;font-size:18px;color:var(--acc)}
+.in{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border:1px solid #3A3B35;background:var(--card);font-size:17px}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.three label{display:block;font-size:13px;color:var(--mut);margin-bottom:6px}
+.file{display:block;width:100%;padding:14px;border-radius:14px;border:1px dashed #4A4B44;background:var(--card);font-size:15px;color:var(--mut)}
+</style></head><body><div class="app">
 
-<div id="nobt" class="card note hide">Bluetooth from a web page needs <b>Chrome on Android</b>. On iPhone use the free <b>Bluefy</b> browser, or on the board go to SETUP &rarr; WI-FI and scan the QR code.</div>
-
-<div class="status"><span class="dot" id="dot"></span><span id="stat">Not connected</span></div>
-<div id="ready" class="card hide" style="margin:10px 0"></div>
-<button class="btn" id="conn">Connect to board</button>
-
-<div id="main" class="hide">
- <div class="card" style="margin-top:12px"><h2>Load ballistic data</h2>
-  <small>Pick a slot, name the rifle, then pick both files.</small>
-  <label for="slot">Slot</label>
-  <select class="ctl" id="slot"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option></select>
-  <label for="nm">Name on the board</label><input class="ctl" id="nm" maxlength="20" placeholder="6mm 108 ELD">
-  <label for="f">Both CSV files</label>
-  <small>Export the range card twice at the same wind speed: wind at <b>270&deg;</b>, then flip it to <b>90&deg;</b>. Fastest: in AB or GeoBallistics tap Share &rarr; <b>The Holdover</b> for each export. Or save both and pick them here (long-press the first, tap the second).</small>
-  <input class="ctl" type="file" id="f" multiple accept=".csv,text/csv,text/plain" style="margin-top:6px">
-  <div id="pair" class="pair"></div>
-  <button class="btn" id="send" style="margin-top:14px">Send to board</button>
-  <div class="bar"><i id="prog"></i></div><div class="msg" id="msg"></div>
+<!-- 1. CONNECT -->
+<section class="view" id="vConnect">
+ <div class="hero">
+  <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="5"><circle cx="75" cy="75" r="56"/><path d="M75 4v34M75 112v34M4 75h34M112 75h34" stroke-width="6"/><path d="M75 30v28M75 92v28M30 75h28M92 75h28" stroke-width="3"/><path d="M67 100h16M67 108h16M67 116h16" stroke-width="3"/><circle cx="75" cy="75" r="4" fill="#C9A66B" stroke="none"/></svg>
+  <div class="the">THE</div><div class="word">HOLDOVER</div>
+  <p>Load your dope and targets onto your armboard.</p>
  </div>
+ <div class="foot" style="border:0">
+  <div id="nobt" class="chip warn hide">Bluetooth from a web page needs Chrome on Android. On iPhone use the free Bluefy browser, or on the board go to SETUP → WI-FI and scan the code.</div>
+  <div id="ready" class="chip hide"></div>
+  <ol class="steps">
+   <li><span>1</span>Wake the board, or tap CONNECT PHONE on it</li>
+   <li><span>2</span>Tap Connect below</li>
+   <li><span>3</span>Pick HOLDOVER-XXXX, then Pair</li>
+  </ol>
+  <div id="cstat" role="status"></div>
+  <button class="btn" id="conn"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#111210" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg>Connect board</button>
+  <div class="note">No Bluetooth? On the board go to SETUP → WI-FI and scan the code.</div>
+ </div>
+</section>
 
- <div class="card"><h2>Rifles on the board</h2><div id="slots"></div>
-  <small>USE = your rifle. PARTNER = shown under yours for spotting.</small></div>
+<!-- 2. HOME -->
+<section class="view hide" id="vHome">
+ <header class="top">
+  <div class="brand"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2"><circle cx="15" cy="15" r="11.5"/><path d="M15 1v6M15 23v6M1 15h6M23 15h6M15 18v6M12.5 20h5M12.5 22.5h5"/><circle cx="15" cy="15" r="1.2" fill="#EEEBE3" stroke="none"/></svg>HOLDOVER</div>
+ </header>
+ <div class="pad">
+  <div class="card board">
+   <div class="badge"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C9A66B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="2.5"/><path d="M8 8h8M8 11.5h8M8 15h5"/></svg></div>
+   <div style="flex:1">
+    <div class="live"><i></i>CONNECTED</div>
+    <div class="bname" id="bname">HOLDOVER</div>
+    <div class="small" id="bver"></div>
+   </div>
+   <button class="icon" id="disc" aria-label="Disconnect"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2" stroke-linecap="round"><path d="M12 3v8M7 6.5a7 7 0 1 0 10 0"/></svg></button>
+  </div>
+  <div class="msg" id="msgHome" role="status"></div>
 
- <div class="card"><h2>Stage targets</h2><div id="tg"></div>
-  <button class="btn alt" id="sendT" style="margin-top:8px">Send targets</button><div class="msg" id="msgT"></div></div>
+  <div class="lbl" style="margin-top:12px">Rifles on the board</div>
+  <div class="stack">
+   <article class="card rifle mine">
+    <div style="flex:1"><span class="tag">MY RIFLE</span><div class="rname" id="rMine">—</div></div>
+    <button class="btn2" data-load="me">Replace</button>
+   </article>
+   <article class="card rifle">
+    <div style="flex:1"><span class="tag">PARTNER</span><div class="rname" id="rPart">—</div>
+     <label class="sw"><input type="checkbox" id="pOn">Show under my dope</label></div>
+    <button class="btn2" data-load="partner" id="pLoad">Replace</button>
+   </article>
+  </div>
+  <div id="otherWrap" class="hide">
+   <div class="lbl">Other rifles on the board</div>
+   <div class="card" id="others" style="padding:6px 16px"></div>
+  </div>
 
- <div class="card"><h2>Update board software</h2>
-  <small>Pick the <b>firmware_signed.bin</b> file you were sent. Keep the phone next to the board until it restarts.</small>
-  <div id="ver" style="margin-top:6px;font-weight:700"></div>
-  <input class="ctl" type="file" id="fw" accept=".bin,application/octet-stream" style="margin-top:6px">
-  <button class="btn alt" id="sendFw" style="margin-top:10px">Install update</button>
-  <div class="bar"><i id="fwprog"></i></div><div class="msg" id="msgFw"></div></div>
+  <div class="lbl">On the board</div>
+  <div class="tiles">
+   <button class="tile" data-go="vTargets"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C9A66B" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="#C9A66B"/></svg><b>Targets</b><span id="tTg">—</span></button>
+   <button class="tile" data-go="vTable"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C9A66B" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9.5h16M4 15h16M10 4v16"/></svg><b>Table</b><span id="tTb">—</span></button>
+   <button class="tile" data-go="vSoft"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C9A66B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg><b>Software</b><span id="tSw">—</span></button>
+  </div>
+  <div style="height:20px"></div>
+ </div>
+ <div class="foot">
+  <button class="btn" data-load="me"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#111210" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9M7.5 13.5L12 9l4.5 4.5M5 4h14"/></svg>Load new dope</button>
+ </div>
+</section>
 
- <div class="card"><h2>Dope table</h2>
-  <div class="trow" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-   <input class="ctl" id="ts" inputmode="numeric" placeholder="from"><input class="ctl" id="te" inputmode="numeric" placeholder="to"><input class="ctl" id="tp" inputmode="numeric" placeholder="every">
-  </div><button class="btn alt sm" id="sendTbl">Save table</button><div class="msg" id="msgTbl"></div></div>
-</div>
+<!-- 3. LOAD DOPE -->
+<section class="view hide" id="vLoad">
+ <header class="sub"><button class="icon bare" data-back aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Load dope</h1></header>
+ <div class="pad">
+  <div class="lbl" style="margin-top:10px">Whose rifle</div>
+  <div class="seg"><button id="wMe" aria-pressed="true">MY RIFLE</button><button id="wPart" aria-pressed="false">PARTNER</button></div>
+  <label class="lbl" for="nm" style="display:block">Name on the board</label>
+  <input class="field" id="nm" maxlength="20" placeholder="6mm 108 ELD" autocomplete="off">
+  <div class="lbl">Both exports · same wind speed</div>
+  <input type="file" id="f" multiple accept=".csv,text/csv,text/plain" class="hide">
+  <div class="files">
+   <label class="ftile" for="f" id="f270"></label>
+   <label class="ftile" for="f" id="f90"></label>
+  </div>
+  <div class="tip">Export the range card twice at the same wind speed: wind at <b>270°</b>, then <b>90°</b>. Fastest: in AB Quantum or GeoBallistics tap <b>Share → The Holdover</b> for each one. Or tap a box above and pick both (long-press the first, tap the second).</div>
+  <button class="linkbtn hide" id="clrPair">Clear files</button>
+  <div style="height:20px"></div>
+ </div>
+ <div class="foot">
+  <div class="check wait" id="pairMsg"></div>
+  <button class="btn" id="send" disabled>Send to board</button>
+  <div class="bar"><i id="prog"></i></div><div class="msg" id="msg" role="status"></div>
+ </div>
+</section>
+
+<!-- 4. TARGETS -->
+<section class="view hide" id="vTargets">
+ <header class="sub"><button class="icon bare" data-back aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Stage targets</h1></header>
+ <div class="pad">
+  <p class="small" style="margin:6px 0 16px">Name and yardage for each target. Leave the yards empty to skip a row.</p>
+  <div id="tg"></div>
+ </div>
+ <div class="foot"><button class="btn" id="sendT">Send targets</button><div class="msg" id="msgT" role="status"></div></div>
+</section>
+
+<!-- 5. TABLE -->
+<section class="view hide" id="vTable">
+ <header class="sub"><button class="icon bare" data-back aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Dope table</h1></header>
+ <div class="pad">
+  <p class="small" style="margin:6px 0 16px">The yardages shown on the TABLE screen.</p>
+  <div class="three">
+   <div><label for="ts">From (yds)</label><input class="in" id="ts" inputmode="numeric"></div>
+   <div><label for="te">To (yds)</label><input class="in" id="te" inputmode="numeric"></div>
+   <div><label for="tp">Every (yds)</label><input class="in" id="tp" inputmode="numeric"></div>
+  </div>
+ </div>
+ <div class="foot"><button class="btn" id="sendTbl">Save table</button><div class="msg" id="msgTbl" role="status"></div></div>
+</section>
+
+<!-- 6. SOFTWARE -->
+<section class="view hide" id="vSoft">
+ <header class="sub"><button class="icon bare" data-back aria-label="Back" id="softBack"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Board software</h1></header>
+ <div class="pad">
+  <div class="card" style="margin-top:8px"><div class="small">This board</div><div class="bname" id="ver">—</div></div>
+  <div class="lbl">Install an update</div>
+  <label class="file" for="fw" id="fwLbl">Tap to pick the firmware_signed.bin file you were sent</label>
+  <input type="file" id="fw" accept=".bin,application/octet-stream" class="hide">
+  <div class="tip">Keep the phone next to the board until it restarts. Takes about 30 seconds.</div>
+ </div>
+ <div class="foot"><button class="btn" id="sendFw">Install update</button><div class="bar"><i id="fwprog"></i></div><div class="msg" id="msgFw" role="status"></div></div>
+</section>
+
 </div>
 <script>
 {
 const SVC='6e400001-d0be-4b0a-9d1d-d0be0a5d0001',RX='6e400002-d0be-4b0a-9d1d-d0be0a5d0001',TX='6e400003-d0be-4b0a-9d1d-d0be0a5d0001';
 const $=id=>document.getElementById(id);
-let dev=null,rx=null,tx=null,acc='',waiters=[],st=null,otaAck=0,otaFail='';
+let dev=null,rx=null,tx=null,acc='',waiters=[],st=null,otaAck=0,otaFail='',who='me',cur='vConnect',busy=false,otaDone=false;
 const enc=new TextEncoder();
+const CHECK='<svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Loaded" fill="none" stroke="#7FD69B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const PLUS='<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#A9A497" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 if(!navigator.bluetooth){$('nobt').classList.remove('hide');$('conn').disabled=true}
 
-function setStat(on,t){$('dot').classList.toggle('on',on);$('stat').textContent=t}
-function show(id,t,ok){const m=$(id);m.textContent=t;m.className='msg '+(ok?'ok':'bad')}
+// ---------- screens ----------
+const VIEWS=['vConnect','vHome','vLoad','vTargets','vTable','vSoft'];
+function go(v,fromPop){VIEWS.forEach(x=>$(x).classList.toggle('hide',x!==v));
+  if(!fromPop&&v!=='vHome'&&v!=='vConnect')history.pushState({v},'');cur=v;window.scrollTo(0,0)}
+addEventListener('popstate',()=>{if(busy){history.pushState({v:cur},'');return}if(cur!=='vHome'&&cur!=='vConnect')go(dev&&dev.gatt.connected?'vHome':'vConnect',true)});
+document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>{if(!busy)history.back()});
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+document.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>openLoad(b.dataset.load));
 
+function show(id,t,ok){const m=$(id);m.textContent=t;m.className='msg '+(ok?'ok':'bad')}
+const clean=r=>r.replace(/^(OK|ERR)\|/,'').replace(/\| (OK|ERR)\|/,'| ');
+
+// ---------- Bluetooth link ----------
 function onNotify(e){acc+=new TextDecoder().decode(e.target.value);let i;
   while((i=acc.indexOf('\n'))>=0){const line=acc.slice(0,i);acc=acc.slice(i+1);
     if(line.startsWith('STATE|')){try{st=JSON.parse(line.slice(6));render()}catch(_){}}
     if(line.startsWith('OTA|ACK|')){otaAck=parseInt(line.slice(8))||otaAck;continue}   // update progress, not a reply
     if(line.startsWith('OTA|ERR|'))otaFail=line.slice(8);
     const w=waiters.shift();if(w)w(line)}}
-function waitReply(ms=15000){return new Promise((res)=>{const t=setTimeout(()=>res('ERR|No reply from board'),ms);waiters.push(l=>{clearTimeout(t);res(l)})})}
+function waitReply(ms=15000){return new Promise(res=>{const t=setTimeout(()=>res('ERR|No reply from board'),ms);waiters.push(l=>{clearTimeout(t);res(l)})})}
 async function write(bytes){await rx.writeValueWithResponse(bytes)}
 async function cmd(s,expect=true){const p=expect?waitReply():null;await write(enc.encode(s));return p}
 
 async function connect(){
   try{
-    setStat(false,'Searching...');
+    $('cstat').textContent='Searching...';
     dev=await navigator.bluetooth.requestDevice({filters:[{services:[SVC]}],optionalServices:[SVC]});
-    dev.addEventListener('gattserverdisconnected',()=>{setStat(false,'Disconnected - tap Connect');$('conn').classList.remove('hide')});
+    $('cstat').textContent='Connecting to '+(dev.name||'board')+'...';
+    dev.addEventListener('gattserverdisconnected',()=>{waiters.splice(0).forEach(w=>w('ERR|Board disconnected'));st=null;busy=false;
+      $('cstat').textContent=otaDone?'Update installed. The board is restarting. Wait about 10 seconds, then tap Connect.':'Disconnected. Tap Connect to reconnect.';otaDone=false;go('vConnect',true);showPair()});
     const srv=await dev.gatt.connect();const s=await srv.getPrimaryService(SVC);
     rx=await s.getCharacteristic(RX);tx=await s.getCharacteristic(TX);
     await tx.startNotifications();tx.addEventListener('characteristicvaluechanged',onNotify);
-    setStat(true,'Connected to '+(dev.name||'board'));$('conn').classList.add('hide');$('main').classList.remove('hide');$('ready').classList.add('hide');
+    $('cstat').textContent='';$('bname').textContent=dev.name||'HOLDOVER';$('msgHome').textContent='';
+    go('vHome');
     await cmd('Q');
-  }catch(e){setStat(false,'Not connected: '+(e.message||e))}
+    if(picked.length)openLoad('me');                     // files were shared before connecting: go straight to sending
+  }catch(e){$('cstat').textContent=/cancel/i.test(e.message||'')?'':'Not connected: '+(e.message||e)}
 }
 $('conn').onclick=connect;
+$('disc').onclick=()=>{try{dev.gatt.disconnect()}catch(_){}};
 
 async function sendBlob(kind,slot,part,name,text,bar){
   const data=enc.encode(text);name=(name||'').replace(/[|\n]/g,' ').slice(0,20);
   await write(enc.encode(`B${kind}|${slot}|${part}|${name}|${data.length}`));
   const CH=180;
   for(let i=0;i<data.length;i+=CH){const c=new Uint8Array(1+Math.min(CH,data.length-i));c[0]=68;c.set(data.subarray(i,i+CH),1);
-    await write(c);if(bar)bar.style.width=Math.round(100*(i+CH)/data.length)+'%'}
+    await write(c);if(bar)bar.style.width=Math.round(100*Math.min(1,(i+CH)/data.length))+'%'}
   return cmd('E');
 }
-// Read wind speed + direction from a file's header (AB Quantum or GeoBallistics)
-function meta(text){text=text.replace(/^﻿/,'');
+
+// ---------- home ----------
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let lastPartner=-1;
+try{lastPartner=+localStorage.getItem('holdover_lastp');if(isNaN(lastPartner))lastPartner=-1}catch(_){}
+function setName(el,n){el.textContent=n||'Nothing loaded';el.classList.toggle('empty',!n)}
+function partnerCandidate(){if(lastPartner>=0&&lastPartner!==st.active&&st.slots[lastPartner])return lastPartner;
+  return st.slots.findIndex((n,i)=>n&&i!==st.active)}
+function render(){if(!st)return;
+  const a=st.active,p=st.partner;
+  if(p>=0){lastPartner=p;try{localStorage.setItem('holdover_lastp',p)}catch(_){}}
+  setName($('rMine'),st.slots[a]);
+  const pi=p>=0?p:partnerCandidate();
+  setName($('rPart'),pi>=0?st.slots[pi]:'');
+  $('pOn').checked=p>=0;$('pOn').disabled=pi<0;
+  $('pLoad').textContent=pi>=0?'Replace':'Load';
+  const oth=st.slots.map((n,i)=>({n,i})).filter(o=>o.n&&o.i!==a&&o.i!==pi);
+  $('otherWrap').classList.toggle('hide',!oth.length);
+  $('others').innerHTML=oth.map(o=>`<div class="other"><b>${esc(o.n)}</b><button class="btn2" data-u="${o.i}">Use</button><button class="btn2 ghost" data-p="${o.i}">Partner</button></div>`).join('');
+  $('bver').textContent=st.ver?'Software v'+st.ver:'';$('tSw').textContent=st.ver?'v'+st.ver:'—';$('ver').textContent=st.ver?'v'+st.ver:'Unknown';
+  const nT=(st.targets||[]).filter(t=>t&&+t.y>0).length;$('tTg').textContent=nT?nT+' set':'None set';
+  $('tTb').textContent=st.ts?`${st.ts}–${st.te} / ${st.tp}`:'—';
+  if(cur!=='vTargets'){let h='';for(let i=0;i<10;i++){const t=(st.targets||[])[i]||{n:'',y:''};
+    h+=`<div class="trow"><b>T${i+1}</b><input class="in" id="tn${i}" maxlength="12" value="${esc(t.n)}" placeholder="Name" aria-label="Target ${i+1} name"><input class="in" id="ty${i}" inputmode="numeric" value="${t.y||''}" placeholder="Yds" aria-label="Target ${i+1} yards"></div>`}
+    $('tg').innerHTML=h}
+  if(cur!=='vTable'){$('ts').value=st.ts;$('te').value=st.te;$('tp').value=st.tp}
+}
+$('pOn').onchange=async()=>{if(!st)return;const k=$('pOn').checked?partnerCandidate():-1;
+  const r=await cmd('P'+k);if(!r.startsWith('OK'))show('msgHome',clean(r),false);await cmd('Q')};
+$('others').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+  const r=b.dataset.u!=null?await cmd('U'+b.dataset.u):await cmd('P'+b.dataset.p);show('msgHome',clean(r),r.startsWith('OK'));await cmd('Q')});
+
+// ---------- load dope ----------
+// Two rifles in the app: MY RIFLE (the board's active slot) and PARTNER. Extra slots stay usable under "Other rifles".
+function slotFor(w){const a=st?st.active:0,n=st?st.slots.length:4;
+  if(w==='me')return a;
+  if(st&&st.partner>=0)return st.partner;
+  const c=st?partnerCandidate():-1;if(c>=0)return c;
+  for(let i=0;i<n;i++)if(i!==a&&!(st&&st.slots[i]))return i;
+  return a===0?1:0}
+function setWho(w){who=w;$('wMe').setAttribute('aria-pressed',w==='me');$('wPart').setAttribute('aria-pressed',w!=='me')}
+$('wMe').onclick=()=>setWho('me');$('wPart').onclick=()=>setWho('partner');
+function openLoad(w){setWho(w);$('msg').textContent='';$('prog').style.width='0';
+  if(!picked.length)$('nm').value='';else if(!$('nm').value&&picked[0])$('nm').value=picked[0].m.name.slice(0,20);
+  go('vLoad');showPair()}
+
+function meta(text){text=text.replace(/^﻿/,'');               // wind speed + direction from the file header
   let mph=NaN,clock=NaN,app='AB',name=text.split(/\r?\n/)[0].split(',')[0].trim();
   let m=text.match(/Windspeed \[MPH\],\s*([\d.]+)/);if(m)mph=+m[1];
   m=text.match(/Wind Direction,\s*(\d+):(\d+)/);if(m)clock=+m[1]+(+m[2])/60;
   const g=text.match(/^Wind,\s*([\d.]+)\s*mph\s*@\s*([\d.]+)/m);
   if(g){app='GEO';mph=+g[1];const b=(text.match(/Shot Bearing,\s*([\d.]+)/)||[0,0])[1];clock=(((+g[2]-b)%360)+360)%360/30;if(clock<.5)clock+=12;
     const r=text.match(/^Rifle,(.*)$/m);if(r)name=r[1].trim()}
-  const side=isNaN(clock)?0:Math.sign(Math.round(Math.sin(clock*Math.PI/6)*100));   // -1 from left (9), +1 from right (3)
+  const side=isNaN(clock)?0:Math.sign(Math.round(Math.sin(clock*Math.PI/6)*100));   // -1 from left (270), +1 from right (90)
   return{mph,clock,app,name,side}}
 let picked=[];
-const clk=c=>isNaN(c)?'?':`${Math.round(c*30)%360}°`;   // clock hours -> degrees (9:00 = 270°)
-// Files can arrive three ways: the file picker, the Android share sheet (one export at a time),
-// or saved from an earlier share. Keep the newest file for each side (270 / 90) until sent.
 const PKEY='holdover_pending';
 function savePending(){try{localStorage.setItem(PKEY,JSON.stringify(picked.map(p=>({n:p.n,t:p.t}))))}catch(e){}}
 function loadPending(){try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]}}
@@ -148,30 +347,36 @@ function addTexts(items,replaceAll){
   if(replaceAll)picked=[];
   for(const it of items){const m=meta(it.t);
     if(m.side!=0)picked=picked.filter(p=>p.m.side!=m.side);   // newer file for that side wins
-    picked.push({n:it.n,t:it.t,m});}
-  picked=picked.slice(-2);savePending();showPair()}
-function showPair(){
-  picked.sort((a,b)=>a.m.side-b.m.side);                 // 270 (left) first
-  const okPair=picked.length==2&&picked[0].m.side==-1&&picked[1].m.side==1;
-  const need=!picked.length?'':picked.length<2?`<div class="ck no">Got ${picked[0].m.side<0?'270°':picked[0].m.side>0?'90°':'one file'}. Now share the ${picked[0].m.side<0?'90°':'270°'} export.</div>`:'';
-  $('pair').innerHTML=picked.map(p=>`<div class="pf"><b>${p.m.side<0?'270° (left)':p.m.side>0?'90° (right)':'no crosswind'}</b><span>${p.m.mph} mph at ${clk(p.m.clock)} · ${p.m.app}</span></div>`).join('')+
-    (need||(picked.length<2?'':okPair?(picked[0].m.mph==picked[1].m.mph?'<div class="ck ok">Pair OK</div>':'<div class="ck no">Speeds differ: works, but same speed is best</div>'):
-     '<div class="ck no">Need one file with wind at 270° (left) and one at 90° (right)</div>'))+
-    (picked.length?'<button class="btn alt sm" id="clrPair" type="button">Clear files</button>':'');
-  if($('clrPair'))$('clrPair').onclick=()=>{picked=[];savePending();showPair()};
+    picked.push({n:it.n,t:it.t,m})}
+  picked=picked.slice(-2);savePending();
   if(!$('nm').value&&picked[0])$('nm').value=picked[0].m.name.slice(0,20);
-  $('send').disabled=!okPair;
-  const rd=$('ready');if(rd){const on=$('main').classList.contains('hide')&&picked.length;rd.classList.toggle('hide',!on);
-    rd.innerHTML=on?(okPair?'<b>Pair ready.</b> Connect to the board, then tap Send.':`<b>${picked.length} of 2 files.</b> `+(picked.length==1?`Share the ${picked[0].m.side<0?'90°':'270°'} export next.`:'Check the files below after connecting.')):''}
+  showPair()}
+function tile(el,deg,from,p){
+  el.classList.toggle('got',!!p);
+  el.innerHTML=`<span class="deg">${deg}${p?CHECK:PLUS}</span><span class="small">${from}</span>`+
+    (p?`<span class="fn">${esc(p.n)}</span><span class="small">${p.m.mph} mph · ${p.m.app}</span>`:`<span class="small">Tap to add</span>`)}
+function showPair(){
+  const L=picked.find(p=>p.m.side<0),R=picked.find(p=>p.m.side>0),odd=picked.find(p=>p.m.side==0);
+  tile($('f270'),'270°','Wind from the left',L);tile($('f90'),'90°','Wind from the right',R);
+  const okPair=!!(L&&R);let t='',c='wait';
+  if(odd){t='One file has no crosswind. Export at 270° and 90°.';c='no'}
+  else if(okPair){if(L.m.mph==R.m.mph){t=`Ready · ${L.m.mph} mph wind, both files match`;c='ok'}else{t='Speeds differ. It works, but the same speed is best.';c='no'}}
+  else if(L||R)t=`Got ${L?'270°':'90°'}. Now add the ${L?'90°':'270°'} export.`;
+  else t='Add both exports to send.';
+  $('pairMsg').textContent=t;$('pairMsg').className='check '+c;
+  $('clrPair').classList.toggle('hide',!picked.length);
+  $('send').disabled=!okPair||!st;
+  const rd=$('ready'),on=!st&&picked.length;rd.classList.toggle('hide',!on);
+  if(on)rd.innerHTML=okPair?'<b>Both files ready.</b>&nbsp;Connect to send them.':`<b>1 of 2 files.</b>&nbsp;Share the ${L?'90°':'270°'} export next.`;
 }
+$('clrPair').onclick=()=>{picked=[];savePending();showPair()};
 $('f').addEventListener('change',async()=>{
   const items=[];for(const f of [...$('f').files].slice(0,2))items.push({n:f.name,t:await f.text()});
-  addTexts(items,items.length==2);
-});
+  $('f').value='';addTexts(items,items.length==2)});
 async function takeShared(){                             // files the service worker caught from the share sheet
   let items=[];
   try{const c=await caches.open('holdover-share');
-    for(const k of await c.keys()){const r=await c.match(k);items.push({n:decodeURIComponent(k.url.split('/').pop()),t:await r.text()});await c.delete(k)}}catch(e){}
+    for(const k of await c.keys()){const r=await c.match(k);items.push({n:decodeURIComponent(k.url.split('/').pop()).replace(/^\d+-\d+-/,''),t:await r.text()});await c.delete(k)}}catch(e){}
   return items.filter(i=>/Range|Rifle,|Wind/.test(i.t));
 }
 (async()=>{
@@ -180,36 +385,35 @@ async function takeShared(){                             // files the service wo
     const got=await takeShared();
     history.replaceState(null,'',location.pathname);
     if(got.length)addTexts(got,false);
-    else show('msg','Shared item had no CSV range card. Export as CSV and share the file.',false);
+    else $('cstat').textContent='That share had no CSV range card. Export as CSV and share the file.';
   }
+  showPair();
 })();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-$('send').disabled=true;
+
 $('send').onclick=async()=>{
-  if(picked.length!=2)return show('msg','Pick both files: wind at 270° and at 90°',false);
-  $('send').disabled=true;$('prog').style.width='0';
-  const slot=$('slot').value,name=$('nm').value.trim();
-  let r=await sendBlob('F',slot,1,name,picked[0].t,$('prog'));
-  if(r.startsWith('OK')){$('prog').style.width='0';const r2=await sendBlob('F',slot,2,name,picked[1].t,$('prog'));r=r2.startsWith('OK')?r2:r+' | '+r2}
-  show('msg',r.replace(/^(OK|ERR)\|/,'').replace(/\| (OK|ERR)\|/,'| '),r.startsWith('OK')&&!/not used|WARNING/.test(r));
-  if(r.startsWith('OK')){picked=[];savePending();showPair()}
-  $('send').disabled=picked.length!=2;await cmd('Q');
+  const L=picked.find(p=>p.m.side<0),R=picked.find(p=>p.m.side>0);
+  if(!L||!R)return show('msg','Add both files: wind at 270° and at 90°',false);
+  busy=true;$('send').disabled=true;$('prog').style.width='0';
+  const slot=slotFor(who),name=$('nm').value.trim();
+  let r=await sendBlob('F',slot,1,name,L.t,$('prog'));
+  if(r.startsWith('OK')){$('prog').style.width='0';const r2=await sendBlob('F',slot,2,name,R.t,$('prog'));r=r2.startsWith('OK')?r2:r+' | '+r2}
+  const good=r.startsWith('OK');
+  if(good){if(who==='me'&&st&&st.active!==slot)await cmd('U'+slot);if(who!=='me')await cmd('P'+slot)}
+  busy=false;
+  if(good){picked=[];savePending();$('nm').value='';await cmd('Q');
+    show('msgHome',(who==='me'?'Your rifle':'Partner rifle')+' loaded. '+clean(r),!/not used|WARNING/.test(r));history.back()}
+  else{show('msg',clean(r),false);showPair();await cmd('Q')}
 };
 
-function render(){if(!st)return;
-  $('ver').textContent=st.ver?'This board: v'+st.ver:'';
-  $('slots').innerHTML=st.slots.map((n,i)=>`<div class="slot"><b>${i+1}. ${n?esc(n):'<span style="opacity:.5">empty</span>'}</b>`+
-    (i==st.active?'<span class="tag">MY RIFLE</span>':i==st.partner?`<span class="tag">PARTNER</span><button class="btn alt sm" data-p="-1">Off</button>`:
-     n?`<button class="btn sm" data-u="${i}">USE</button><button class="btn alt sm" data-p="${i}">PARTNER</button>`:'')+'</div>').join('');
-  let h='';for(let i=0;i<10;i++){const t=st.targets[i]||{n:'',y:''};
-    h+=`<div class="trow"><b>T${i+1}</b><input class="ctl" id="tn${i}" maxlength="12" value="${esc(t.n)}" placeholder="name"><input class="ctl" id="ty${i}" inputmode="numeric" value="${t.y}" placeholder="yds"></div>`}
-  $('tg').innerHTML=h;$('ts').value=st.ts;$('te').value=st.te;$('tp').value=st.tp}
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-$('slots').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.u!=null)await cmd('U'+b.dataset.u);if(b.dataset.p!=null)await cmd('P'+b.dataset.p);await cmd('Q')});
+// ---------- targets / table ----------
 $('sendT').onclick=async()=>{let b='';for(let i=0;i<10;i++){const n=$('tn'+i).value.replace(/[,\n|]/g,' ').trim(),y=parseInt($('ty'+i).value);if(y>0)b+=(n||'T'+(i+1))+','+y+'\n'}
-  const r=await sendBlob('T',0,0,'',b);show('msgT',r.replace(/^(OK|ERR)\|/,''),r.startsWith('OK'));await cmd('Q')};
-// Software update over Bluetooth: send firmware.bin in chunks; the board acks every 4 KB so we never run too far ahead.
+  const r=await sendBlob('T',0,0,'',b);show('msgT',clean(r),r.startsWith('OK'));await cmd('Q')};
+$('sendTbl').onclick=async()=>{const r=await cmd(`S${$('ts').value}|${$('te').value}|${$('tp').value}`);show('msgTbl',clean(r),r.startsWith('OK'));await cmd('Q')};
+
+// ---------- software update over Bluetooth ----------
+// Send firmware_signed.bin in pieces; the board acks every 4 KB so we never run too far ahead.
+$('fw').onchange=()=>{const f=$('fw').files[0];$('fwLbl').textContent=f?f.name:'Tap to pick the firmware_signed.bin file you were sent';$('fwLbl').style.color=f?'#EEEBE3':''};
 $('sendFw').onclick=async()=>{
   const f=$('fw').files[0],bar=$('fwprog');
   if(!f)return show('msgFw','Pick the firmware_signed.bin file first',false);
@@ -217,8 +421,8 @@ $('sendFw').onclick=async()=>{
   const data=new Uint8Array(await f.arrayBuffer());
   const signed=new TextDecoder().decode(data.subarray(0,8))==='HOLDSIG2';
   if(!signed&&data[0]!==0xE9)return show('msgFw','That is not a Holdover update file',false);
-  if(!signed)return show('msgFw','That file is not signed - use firmware_signed.bin',false);
-  $('sendFw').disabled=true;otaAck=0;otaFail='';bar.style.width='0%';
+  if(!signed)return show('msgFw','That file is not signed. Use firmware_signed.bin',false);
+  busy=true;$('sendFw').disabled=true;$('softBack').disabled=true;otaAck=0;otaFail='';bar.style.width='0%';
   const t0=Date.now();
   try{
     show('msgFw','Starting... (the board shows UPDATING SOFTWARE)',true);
@@ -233,15 +437,14 @@ $('sendFw').onclick=async()=>{
       catch(e){if(CH>20){CH=CH>180?180:20;continue}throw e}   // phone link too small for big pieces: go smaller
       i+=n;
       if((i/CH|0)%20==0){bar.style.width=Math.round(100*i/data.length)+'%';
-        show('msgFw','Sending '+Math.round(100*i/data.length)+'%  - keep the phone close',true)}
+        show('msgFw','Sending '+Math.round(100*i/data.length)+'%. Keep the phone close.',true)}
     }
     bar.style.width='100%';show('msgFw','Checking...',true);
     const z=await cmd('Z',true);
     if(!z.startsWith('OTA|DONE'))throw new Error(z.replace(/^OTA\|ERR\|/,''));
-    show('msgFw','Installed in '+Math.round((Date.now()-t0)/1000)+' s. The board is restarting - reconnect in about 10 seconds.',true);
+    otaDone=true;show('msgFw','Installed in '+Math.round((Date.now()-t0)/1000)+' s. The board is restarting. Reconnect in about 10 seconds.',true);
   }catch(e){try{await write(enc.encode('X'))}catch(_){}
     show('msgFw','Update failed: '+(e.message||e)+'. The board is still on the old version.',false)}
-  $('sendFw').disabled=false};
-$('sendTbl').onclick=async()=>{const r=await cmd(`S${$('ts').value}|${$('te').value}|${$('tp').value}`);show('msgTbl',r.replace(/^(OK|ERR)\|/,''),r.startsWith('OK'))};
+  busy=false;$('sendFw').disabled=false;$('softBack').disabled=false};
 }
 </script></body></html>
