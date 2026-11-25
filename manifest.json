@@ -22,7 +22,7 @@
       "files": [{
         "name": "csv",
         "accept": ["text/csv", "text/comma-separated-values", "application/csv", "text/plain",
-                   "application/vnd.ms-excel", "application/octet-stream", ".csv", ".txt"]
+                   "application/vnd.ms-excel", "application/octet-stream", ".csv", ".txt", ".holdover"]
       }]
     }
   }

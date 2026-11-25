@@ -2,7 +2,7 @@
 // 1) Android share target: AB / GeoBallistics "Share" -> The Holdover lands here as a POST.
 //    Stash the CSV(s) in a cache, then open the loader, which picks them up.
 // 2) Keeps the loader working with no cell signal at the range.
-const SHELL = 'holdover-shell-v5';
+const SHELL = 'holdover-shell-v6';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
                       new Response(await f.text()));
       }
       const txt = form.get('text');                     // some apps share the card as text, not a file
-      if (n === 0 && txt && /Range/.test(txt))
+      if (n === 0 && txt && (/Range/.test(txt) || /HOLDOVER-CARD|#c=[zp]/.test(txt)))
         await box.put('./_shared/' + Date.now() + '-text.csv', new Response(txt));
       return Response.redirect('./?share=1', 303);
     })());
