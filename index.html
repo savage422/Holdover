@@ -54,6 +54,18 @@ button,input,select{font:inherit;color:inherit}
 .bname{font-family:var(--cond);font-weight:800;font-size:22px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .small{font-size:14px;color:var(--mut)}
 .rifle{display:flex;align-items:center;gap:12px}.rifle.mine{border-color:var(--acc)}
+.rrow{display:flex;align-items:center;gap:8px;padding:10px 12px}.rrow.mine{border-color:var(--acc)}
+.rrow .num{font-family:var(--cond);font-weight:800;font-size:20px;color:var(--mut);width:18px;flex:none}
+.rrow .rn{flex:1;min-width:0;font-family:var(--cond);font-weight:800;font-size:21px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .rn.empty{color:var(--mut);font-weight:700;font-size:17px}
+.rrow .rn small{display:block;font-family:inherit;font-weight:600;font-size:12px;color:var(--mut);letter-spacing:.3px}
+.chip{min-height:38px;min-width:46px;padding:0 10px;border-radius:10px;border:1px solid #4A4B44;background:transparent;color:var(--ink);font-family:var(--cond);font-weight:800;font-size:15px;letter-spacing:.6px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#111210}
+.seg.five{grid-template-columns:repeat(5,minmax(0,1fr))}.seg.five button{font-size:17px;min-height:52px;line-height:1.05}
+.seg.five button small{display:block;font-size:10px;font-weight:600;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xfile{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--ok);margin-top:8px;font-size:14px}
+.xfile b{font-family:var(--cond);font-size:19px}.xfile span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+details.adv{margin-top:14px;border-top:1px solid var(--line);padding-top:6px}details.adv summary{cursor:pointer;font-weight:700;font-size:15px;padding:8px 0;color:var(--acc)}
 .tag{display:inline-block;padding:3px 9px;border-radius:99px;background:#2A2B26;font-family:var(--cond);font-weight:800;font-size:12px;letter-spacing:1.2px}
 .mine .tag{background:var(--acc);color:#111210}
 .rname{margin-top:8px;font-family:var(--cond);font-weight:800;font-size:28px;line-height:1.05;word-break:break-word}
@@ -150,17 +162,8 @@ video#cam{width:100%;border-radius:16px;background:#000;max-height:300px;object-
   <div class="msg" id="msgHome" role="status"></div>
 
   <div class="lbl" style="margin-top:12px">Rifles on the board</div>
-  <div class="stack">
-   <article class="card rifle mine">
-    <div style="flex:1"><span class="tag">MY RIFLE</span><div class="rname" id="rMine">—</div></div>
-    <button class="btn2" data-load="me">Replace</button>
-   </article>
-   <article class="card rifle">
-    <div style="flex:1"><span class="tag">PARTNER</span><div class="rname" id="rPart">—</div>
-     <label class="sw"><input type="checkbox" id="pOn">Show under my dope</label></div>
-    <button class="btn2" data-load="partner" id="pLoad">Replace</button>
-   </article>
-  </div>
+  <div class="tip" style="margin:-2px 0 8px">ME = your dope on the board. P = shown under it for your partner.</div>
+  <div class="stack" id="rifles"></div>
 
   <div class="lbl">On the board</div>
   <div class="tiles four">
@@ -180,8 +183,8 @@ video#cam{width:100%;border-radius:16px;background:#000;max-height:300px;object-
 <section class="view hide" id="vLoad">
  <header class="sub"><button class="icon bare" data-back aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#EEEBE3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Load dope</h1></header>
  <div class="pad">
-  <div class="lbl" style="margin-top:10px">Whose rifle</div>
-  <div class="seg"><button id="wMe" aria-pressed="true">MY RIFLE</button><button id="wPart" aria-pressed="false">PARTNER</button></div>
+  <div class="lbl" style="margin-top:10px">Slot on the board</div>
+  <div class="seg five" id="slotPick"></div>
   <label class="lbl" for="nm" style="display:block">Name on the board</label>
   <input class="field" id="nm" maxlength="20" placeholder="6mm 108 ELD" autocomplete="off">
   <div class="lbl">Both exports · same wind speed</div>
@@ -191,6 +194,12 @@ video#cam{width:100%;border-radius:16px;background:#000;max-height:300px;object-
    <label class="ftile" for="f" id="f90"></label>
   </div>
   <div class="tip">Export the range card twice at the same wind speed: wind at <b>270°</b>, then <b>90°</b>. Fastest: in AB Quantum or GeoBallistics tap <b>Share → The Holdover</b> for each one. Or tap a box above and pick both (long-press the first, tap the second).</div>
+  <details class="adv" id="adv"><summary>Advanced: more wind speeds (up to 3)</summary>
+   <div class="tip" style="margin-top:4px">Also export the same rifle at other speeds, e.g. <b>5</b> and <b>20 mph</b> at 270°. The board reads straight lines between the speeds you give it instead of scaling one file. Up to 2 extra files (3 speeds in all). Needs board v0.9.25.</div>
+   <div id="xlist"></div>
+   <input type="file" id="fx" multiple accept=".csv,text/csv,text/plain" class="hide">
+   <label class="btn2" for="fx" style="display:inline-flex;align-items:center;margin-top:10px">+ Add extra speed file</label>
+  </details>
   <button class="linkbtn hide" id="clrPair">Clear files</button>
   <div style="height:20px"></div>
  </div>
@@ -402,7 +411,7 @@ function qrgen(bytes){
 {
 const SVC='6e400001-d0be-4b0a-9d1d-d0be0a5d0001',RX='6e400002-d0be-4b0a-9d1d-d0be0a5d0001',TX='6e400003-d0be-4b0a-9d1d-d0be0a5d0001';
 const $=id=>document.getElementById(id);
-let dev=null,rx=null,tx=null,acc='',waiters=[],st=null,otaAck=0,otaFail='',who='me',cur='vConnect',busy=false,otaDone=false;
+let dev=null,rx=null,tx=null,acc='',waiters=[],st=null,otaAck=0,otaFail='',who='me',loadSlot=0,cur='vConnect',busy=false,otaDone=false;
 const enc=new TextEncoder();
 const CHECK='<svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Loaded" fill="none" stroke="#7FD69B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const PLUS='<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#A9A497" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
@@ -479,14 +488,21 @@ function partnerCandidate(){if(lastPartner>=0&&lastPartner!==st.active&&st.slots
 function partnerSlot(){if(!st)return 1;if(st.slots.length===2)return 1-st.active;
   if(st.partner>=0)return st.partner;const c=partnerCandidate();if(c>=0)return c;
   for(let i=0;i<st.slots.length;i++)if(i!==st.active&&!st.slots[i])return i;return st.active===0?1:0}
+function verGE(v,want){const a=String(v||'0').split('.').map(Number),b=want.split('.').map(Number);
+  for(let i=0;i<3;i++){if((a[i]||0)!==(b[i]||0))return (a[i]||0)>(b[i]||0)}return true}
 function render(){if(!st)return;
   const a=st.active,p=st.partner;
   if(p>=0){lastPartner=p;try{localStorage.setItem('holdover_lastp',p)}catch(_){}}
-  setName($('rMine'),st.slots[a]);
-  const pi=partnerSlot(),pn=st.slots[pi];
-  setName($('rPart'),pn||'');
-  $('pOn').checked=p>=0;$('pOn').disabled=!pn;
-  $('pLoad').textContent=pn?'Replace':'Load';
+  $('rifles').innerHTML=st.slots.map((n,i)=>{const me=i===a,pt=i===p,f=(st.files||[])[i]||0;
+    return `<article class="card rrow${me?' mine':''}"><span class="num">${i+1}</span>`+
+      `<div class="rn${n?'':' empty'}">${n?esc(n):'Empty'}${n?`<small>${f>2?f+' files · '+'multi-speed wind':f===2?'270° + 90°':f===1?'1 file':''}</small>`:''}</div>`+
+      (n?`<button class="chip" data-me="${i}" aria-pressed="${me}">ME</button>`+(me?'':`<button class="chip" data-pt="${i}" aria-pressed="${pt}">P</button>`):'')+
+      `<button class="btn2" data-ld="${i}" style="min-height:38px;padding:0 12px">${n?'Replace':'Load'}</button></article>`}).join('');
+  $('rifles').querySelectorAll('[data-me]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.me;if(i===st.active)return;
+    const r=await cmd('U'+i);if(!r.startsWith('OK'))show('msgHome',clean(r),false);await cmd('Q')});
+  $('rifles').querySelectorAll('[data-pt]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.pt;
+    const r=await cmd('P'+(st.partner===i?-1:i));if(!r.startsWith('OK'))show('msgHome',clean(r),false);await cmd('Q')});
+  $('rifles').querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>openLoad(+b.dataset.ld));
   $('tRc').textContent=st.card?'On board: '+st.card:(cards.length?cards.length+' saved':'None yet');
   $('blog').textContent=(st.log&&st.log.length)?st.log.slice().reverse().join('\n'):'No log yet (needs board v0.9.21).';
   $('bver').textContent=st.ver?'Software v'+st.ver:'';$('tSw').textContent=st.ver?'v'+st.ver:'—';$('ver').textContent=st.ver?'v'+st.ver:'Unknown';
@@ -497,14 +513,12 @@ function render(){if(!st)return;
     $('tg').innerHTML=h}
   if(cur!=='vTable'){$('ts').value=st.ts;$('te').value=st.te;$('tp').value=st.tp}
 }
-$('pOn').onchange=async()=>{if(!st)return;const k=$('pOn').checked?partnerSlot():-1;
-  const r=await cmd('P'+k);if(!r.startsWith('OK'))show('msgHome',clean(r),false);await cmd('Q')};
-
 // ---------- load dope ----------
-function slotFor(w){return w==='me'?(st?st.active:0):partnerSlot()}
-function setWho(w){who=w;$('wMe').setAttribute('aria-pressed',w==='me');$('wPart').setAttribute('aria-pressed',w!=='me')}
-$('wMe').onclick=()=>setWho('me');$('wPart').onclick=()=>setWho('partner');
-function openLoad(w){setWho(w);$('msg').textContent='';$('prog').style.width='0';
+function slotFor(w){return w==='me'?(st?st.active:0):w==='partner'?partnerSlot():+w}
+function setSlot(i){loadSlot=i;const n=st?st.slots.length:2;let h='';
+  for(let k=0;k<n;k++){const nm=st?st.slots[k]:'';h+=`<button data-sl="${k}" aria-pressed="${k===i}">${k+1}${st&&k===st.active?' ME':st&&k===st.partner?' P':''}<small>${nm?esc(nm):'empty'}</small></button>`}
+  $('slotPick').innerHTML=h;$('slotPick').querySelectorAll('[data-sl]').forEach(b=>b.onclick=()=>setSlot(+b.dataset.sl))}
+function openLoad(w){setSlot(slotFor(w));$('msg').textContent='';$('prog').style.width='0';
   if(!picked.length)$('nm').value='';else if(!$('nm').value&&picked[0])$('nm').value=picked[0].m.name.slice(0,20);
   go('vLoad');showPair()}
 
@@ -521,12 +535,20 @@ let picked=[];
 const PKEY='holdover_pending';
 function savePending(){try{localStorage.setItem(PKEY,JSON.stringify(picked.map(p=>({n:p.n,t:p.t}))))}catch(e){}}
 function loadPending(){try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]}}
+// Main pair = 270° + 90° at the base speed (the first file's speed). Files at other speeds are extras
+// (advanced): up to 2, for 3 speeds in all. A newer file for the same side + speed replaces the older one.
+function baseMph(){const m=picked.find(p=>!p.x);return m?m.m.mph:NaN}
 function addTexts(items,replaceAll){
   if(replaceAll)picked=[];
   for(const it of items){const m=meta(it.t);
-    if(m.side!=0)picked=picked.filter(p=>p.m.side!=m.side);   // newer file for that side wins
-    picked.push({n:it.n,t:it.t,m})}
-  picked=picked.slice(-2);savePending();
+    const b=baseMph(),x=!isNaN(b)&&Math.abs(m.mph-b)>=1&&m.side!=0;
+    picked=picked.filter(p=>!(p.m.side==m.side&&Math.abs(p.m.mph-m.mph)<1));
+    if(x){const xs=picked.filter(p=>p.x);if(xs.length>=2)picked.splice(picked.indexOf(xs[0]),1)}
+    picked.push({n:it.n,t:it.t,m,x})}
+  { const main=picked.filter(p=>!p.x);if(main.length>2)picked.splice(picked.indexOf(main[0]),1) }
+  { const sp=[...new Set(picked.map(p=>Math.round(p.m.mph)))];      // 3 speeds max: drop the oldest extra
+    while(sp.length>3){const xs=picked.filter(p=>p.x);if(!xs.length)break;picked.splice(picked.indexOf(xs[0]),1);sp.splice(0,sp.length,...new Set(picked.map(p=>Math.round(p.m.mph))))} }
+  savePending();
   if(!$('nm').value&&picked[0])$('nm').value=picked[0].m.name.slice(0,20);
   showPair()}
 function tile(el,deg,from,p){
@@ -534,20 +556,30 @@ function tile(el,deg,from,p){
   el.innerHTML=`<span class="deg">${deg}${p?CHECK:PLUS}</span><span class="small">${from}</span>`+
     (p?`<span class="fn">${esc(p.n)}</span><span class="small">${p.m.mph} mph · ${p.m.app}</span>`:`<span class="small">Tap to add</span>`)}
 function showPair(){
-  const L=picked.find(p=>p.m.side<0),R=picked.find(p=>p.m.side>0),odd=picked.find(p=>p.m.side==0);
+  const L=picked.find(p=>!p.x&&p.m.side<0),R=picked.find(p=>!p.x&&p.m.side>0),odd=picked.find(p=>p.m.side==0),X=picked.filter(p=>p.x);
+  $('xlist').innerHTML=X.map((p,k)=>`<div class="xfile"><b>${p.m.mph} mph</b><b>${p.m.side<0?'270°':'90°'}</b><span>${esc(p.n)}</span><button class="linkbtn" data-xr="${k}">Remove</button></div>`).join('');
+  $('xlist').querySelectorAll('[data-xr]').forEach(b=>b.onclick=()=>{picked.splice(picked.indexOf(X[+b.dataset.xr]),1);savePending();showPair()});
+  if(X.length)$('adv').open=true;
   tile($('f270'),'270°','Wind from the left',L);tile($('f90'),'90°','Wind from the right',R);
   const okPair=!!(L&&R);let t='',c='wait';
   if(odd){t='One file has no crosswind. Export at 270° and 90°.';c='no'}
-  else if(okPair){if(L.m.mph==R.m.mph){t=`Ready · ${L.m.mph} mph wind, both files match`;c='ok'}else{t='Speeds differ. It works, but the same speed is best.';c='no'}}
+  else if(okPair){t=`Ready · ${L.m.mph} mph wind, both files match`+(X.length?` + ${X.length} extra speed${X.length>1?'s':''} (${X.map(p=>p.m.mph).join(', ')} mph)`:'');c='ok';
+    if(X.length&&st&&!verGE(st.ver,'0.9.25')){t='Extra speed files need board v0.9.25 - update first, or remove them.';c='no'}}
   else if(L||R)t=`Got ${L?'270°':'90°'}. Now add the ${L?'90°':'270°'} export.`;
   else t='Add both exports to send.';
   $('pairMsg').textContent=t;$('pairMsg').className='check '+c;
   $('clrPair').classList.toggle('hide',!picked.length);
-  $('send').disabled=!okPair||!st;
+  $('send').disabled=!okPair||!st||(X.length&&!verGE(st.ver,'0.9.25'));
   const rd=$('ready'),on=!st&&picked.length;rd.classList.toggle('hide',!on);
   if(on)rd.innerHTML=okPair?'<b>Both files ready.</b>&nbsp;Connect to send them.':`<b>1 of 2 files.</b>&nbsp;Share the ${L?'90°':'270°'} export next.`;
 }
 $('clrPair').onclick=()=>{picked=[];savePending();showPair()};
+$('fx').addEventListener('change',async()=>{
+  const items=[];for(const f of [...$('fx').files].slice(0,2))items.push({n:f.name,t:await f.text()});
+  $('fx').value='';for(const it of items){const m=meta(it.t);const b=baseMph();
+    if(isNaN(b)){show('msg','Add the 270° and 90° files first',false);break}
+    if(Math.abs(m.mph-b)<1){show('msg',`That file is ${m.mph} mph - same as the main pair. Export at another speed.`,false);continue}
+    addTexts([it],false)}});
 $('f').addEventListener('change',async()=>{
   const items=[];for(const f of [...$('f').files].slice(0,2))items.push({n:f.name,t:await f.text()});
   $('f').value='';addTexts(items,items.length==2)});
@@ -578,17 +610,19 @@ if(APP&&window.HoldoverShareIn){const S=window.HoldoverShareIn;
   pull();S.addListener('shared',pull)}
 
 $('send').onclick=async()=>{
-  const L=picked.find(p=>p.m.side<0),R=picked.find(p=>p.m.side>0);
+  const L=picked.find(p=>!p.x&&p.m.side<0),R=picked.find(p=>!p.x&&p.m.side>0),X=picked.filter(p=>p.x);
   if(!L||!R)return show('msg','Add both files: wind at 270° and at 90°',false);
   busy=true;$('send').disabled=true;$('prog').style.width='0';
-  const slot=slotFor(who),mine=st?st.active:0,name=$('nm').value.trim();
+  const slot=loadSlot,mine=st?st.active:0,name=$('nm').value.trim();
   let r=await sendBlob('F',slot,1,name,L.t,$('prog'));
   if(r.startsWith('OK')){$('prog').style.width='0';const r2=await sendBlob('F',slot,2,name,R.t,$('prog'));r=r2.startsWith('OK')?r2:r+' | '+r2}
+  if(r.startsWith('OK')&&verGE(st.ver,'0.9.25'))for(let k=0;k<X.length;k++){$('prog').style.width='0';
+    const r3=await sendBlob('F',slot,3+k,name,X[k].t,$('prog'));r=r3.startsWith('OK')?r3:r+' | '+r3}
   const good=r.startsWith('OK');
-  if(good&&who!=='me'){await cmd('U'+mine);await cmd('P'+slot)}     // keep my rifle mine, show the partner (older boards switched)
+  if(good&&slot!==mine){await cmd('U'+mine);if(st.slots.length===2)await cmd('P'+slot)}   // keep my rifle mine
   busy=false;
   if(good){picked=[];savePending();$('nm').value='';await cmd('Q');
-    show('msgHome',(who==='me'?'Your rifle':'Partner rifle')+' loaded. '+clean(r),!/not used|WARNING/.test(r));history.back()}
+    show('msgHome',`Slot ${slot+1}${slot===mine?' (ME)':''} loaded. `+clean(r),!/not used|WARNING/.test(r));history.back()}
   else{show('msg',clean(r),false);showPair();await cmd('Q')}
 };
 
