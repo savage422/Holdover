@@ -194,11 +194,11 @@ video#cam{width:100%;border-radius:16px;background:#000;max-height:300px;object-
    <label class="ftile" for="f" id="f90"></label>
   </div>
   <div class="tip">Export the range card twice at the same wind speed: wind at <b>270°</b>, then <b>90°</b>. Fastest: in AB Quantum or GeoBallistics tap <b>Share → The Holdover</b> for each one. Or tap a box above and pick both (long-press the first, tap the second).</div>
-  <details class="adv" id="adv"><summary>Advanced: more wind speeds (up to 3)</summary>
-   <div class="tip" style="margin-top:4px">Also export the same rifle at other speeds, e.g. <b>5</b> and <b>20 mph</b> at 270°. The board reads straight lines between the speeds you give it instead of scaling one file. Up to 2 extra files (3 speeds in all). Needs board v0.9.25.</div>
+  <details class="adv" id="adv"><summary>Advanced: tailwind file / more wind speeds</summary>
+   <div class="tip" style="margin-top:4px"><b>Recommended:</b> also export at 10 mph with wind at <b>180° (tailwind)</b>. The board then corrects elevation for head and tail wind too, so angled winds match AB / GeoBallistics. Needs board v0.9.28.<br>Other speeds (e.g. 20 mph at 270°) are also accepted, but AB and GeoBallistics wind scales straight with speed, so they rarely change anything. Up to 2 extra files.</div>
    <div id="xlist"></div>
    <input type="file" id="fx" multiple accept=".csv,text/csv,text/plain" class="hide">
-   <label class="btn2" for="fx" style="display:inline-flex;align-items:center;margin-top:10px">+ Add extra speed file</label>
+   <label class="btn2" for="fx" style="display:inline-flex;align-items:center;margin-top:10px">+ Add tailwind / extra file</label>
   </details>
   <button class="linkbtn hide" id="clrPair">Clear files</button>
   <div style="height:20px"></div>
@@ -530,7 +530,8 @@ function meta(text){text=text.replace(/^﻿/,'');               // wind speed + 
   if(g){app='GEO';mph=+g[1];const b=(text.match(/Shot Bearing,\s*([\d.]+)/)||[0,0])[1];clock=(((+g[2]-b)%360)+360)%360/30;if(clock<.5)clock+=12;
     const r=text.match(/^Rifle,(.*)$/m);if(r)name=r[1].trim()}
   const side=isNaN(clock)?0:Math.sign(Math.round(Math.sin(clock*Math.PI/6)*100));   // -1 from left (270), +1 from right (90)
-  return{mph,clock,app,name,side}}
+  const along=!isNaN(clock)&&mph>0.5&&Math.abs(Math.sin(clock*Math.PI/6))<0.26?(Math.cos(clock*Math.PI/6)>0?'H':'T'):'';   // head (12:00) / tail (6:00) file
+  return{mph,clock,app,name,side,along}}
 let picked=[];
 const PKEY='holdover_pending';
 function savePending(){try{localStorage.setItem(PKEY,JSON.stringify(picked.map(p=>({n:p.n,t:p.t}))))}catch(e){}}
@@ -541,13 +542,13 @@ function baseMph(){const m=picked.find(p=>!p.x);return m?m.m.mph:NaN}
 function addTexts(items,replaceAll){
   if(replaceAll)picked=[];
   for(const it of items){const m=meta(it.t);
-    const b=baseMph(),x=!isNaN(b)&&Math.abs(m.mph-b)>=1&&m.side!=0;
-    picked=picked.filter(p=>!(p.m.side==m.side&&Math.abs(p.m.mph-m.mph)<1));
+    const b=baseMph(),x=!!m.along||(!isNaN(b)&&Math.abs(m.mph-b)>=1&&m.side!=0);
+    picked=picked.filter(p=>m.along?p.m.along!==m.along:!(!p.m.along&&p.m.side==m.side&&Math.abs(p.m.mph-m.mph)<1));
     if(x){const xs=picked.filter(p=>p.x);if(xs.length>=2)picked.splice(picked.indexOf(xs[0]),1)}
     picked.push({n:it.n,t:it.t,m,x})}
   { const main=picked.filter(p=>!p.x);if(main.length>2)picked.splice(picked.indexOf(main[0]),1) }
-  { const sp=[...new Set(picked.map(p=>Math.round(p.m.mph)))];      // 3 speeds max: drop the oldest extra
-    while(sp.length>3){const xs=picked.filter(p=>p.x);if(!xs.length)break;picked.splice(picked.indexOf(xs[0]),1);sp.splice(0,sp.length,...new Set(picked.map(p=>Math.round(p.m.mph))))} }
+  { const speeds=()=>[...new Set(picked.filter(p=>!p.m.along).map(p=>Math.round(p.m.mph)))];   // 3 crosswind speeds max
+    while(speeds().length>3){const xs=picked.filter(p=>p.x&&!p.m.along);if(!xs.length)break;picked.splice(picked.indexOf(xs[0]),1)} }
   savePending();
   if(!$('nm').value&&picked[0])$('nm').value=picked[0].m.name.slice(0,20);
   showPair()}
@@ -556,20 +557,22 @@ function tile(el,deg,from,p){
   el.innerHTML=`<span class="deg">${deg}${p?CHECK:PLUS}</span><span class="small">${from}</span>`+
     (p?`<span class="fn">${esc(p.n)}</span><span class="small">${p.m.mph} mph · ${p.m.app}</span>`:`<span class="small">Tap to add</span>`)}
 function showPair(){
-  const L=picked.find(p=>!p.x&&p.m.side<0),R=picked.find(p=>!p.x&&p.m.side>0),odd=picked.find(p=>p.m.side==0),X=picked.filter(p=>p.x);
-  $('xlist').innerHTML=X.map((p,k)=>`<div class="xfile"><b>${p.m.mph} mph</b><b>${p.m.side<0?'270°':'90°'}</b><span>${esc(p.n)}</span><button class="linkbtn" data-xr="${k}">Remove</button></div>`).join('');
+  const L=picked.find(p=>!p.x&&p.m.side<0),R=picked.find(p=>!p.x&&p.m.side>0),odd=picked.find(p=>p.m.side==0&&!p.m.along),X=picked.filter(p=>p.x);
+  $('xlist').innerHTML=X.map((p,k)=>`<div class="xfile"><b>${p.m.mph} mph</b><b>${p.m.along==='T'?'TAIL 180°':p.m.along==='H'?'HEAD 0°':p.m.side<0?'270°':'90°'}</b><span>${esc(p.n)}</span><button class="linkbtn" data-xr="${k}">Remove</button></div>`).join('');
   $('xlist').querySelectorAll('[data-xr]').forEach(b=>b.onclick=()=>{picked.splice(picked.indexOf(X[+b.dataset.xr]),1);savePending();showPair()});
   if(X.length)$('adv').open=true;
   tile($('f270'),'270°','Wind from the left',L);tile($('f90'),'90°','Wind from the right',R);
   const okPair=!!(L&&R);let t='',c='wait';
   if(odd){t='One file has no crosswind. Export at 270° and 90°.';c='no'}
-  else if(okPair){t=`Ready · ${L.m.mph} mph wind, both files match`+(X.length?` + ${X.length} extra speed${X.length>1?'s':''} (${X.map(p=>p.m.mph).join(', ')} mph)`:'');c='ok';
-    if(X.length&&st&&!verGE(st.ver,'0.9.25')){t='Extra speed files need board v0.9.25 - update first, or remove them.';c='no'}}
+  else if(okPair){const XS=X.filter(p=>!p.m.along),XA=X.filter(p=>p.m.along);
+    t=`Ready · ${L.m.mph} mph wind, both files match`+(XS.length?` + ${XS.length} extra speed${XS.length>1?'s':''} (${XS.map(p=>p.m.mph).join(', ')} mph)`:'')+(XA.length?' + '+XA.map(p=>p.m.along==='T'?'tailwind':'headwind').join(' + '):'');c='ok';
+    if(XS.length&&st&&!verGE(st.ver,'0.9.25')){t='Extra speed files need board v0.9.25 - update first, or remove them.';c='no'}
+    if(XA.length&&st&&!verGE(st.ver,'0.9.28')){t='Head/tail wind files need board v0.9.28 - update first, or remove them.';c='no'}}
   else if(L||R)t=`Got ${L?'270°':'90°'}. Now add the ${L?'90°':'270°'} export.`;
   else t='Add both exports to send.';
   $('pairMsg').textContent=t;$('pairMsg').className='check '+c;
   $('clrPair').classList.toggle('hide',!picked.length);
-  $('send').disabled=!okPair||!st||(X.length&&!verGE(st.ver,'0.9.25'));
+  $('send').disabled=!okPair||!st||(X.length&&!verGE(st.ver,'0.9.25'))||(X.some(p=>p.m.along)&&!verGE(st.ver,'0.9.28'));
   const rd=$('ready'),on=!st&&picked.length;rd.classList.toggle('hide',!on);
   if(on)rd.innerHTML=okPair?'<b>Both files ready.</b>&nbsp;Connect to send them.':`<b>1 of 2 files.</b>&nbsp;Share the ${L?'90°':'270°'} export next.`;
 }
@@ -578,7 +581,7 @@ $('fx').addEventListener('change',async()=>{
   const items=[];for(const f of [...$('fx').files].slice(0,2))items.push({n:f.name,t:await f.text()});
   $('fx').value='';for(const it of items){const m=meta(it.t);const b=baseMph();
     if(isNaN(b)){show('msg','Add the 270° and 90° files first',false);break}
-    if(Math.abs(m.mph-b)<1){show('msg',`That file is ${m.mph} mph - same as the main pair. Export at another speed.`,false);continue}
+    if(!m.along&&Math.abs(m.mph-b)<1){show('msg',`That file is ${m.mph} mph - same as the main pair. Export at another speed, or with wind at 180° (tail).`,false);continue}
     addTexts([it],false)}});
 $('f').addEventListener('change',async()=>{
   const items=[];for(const f of [...$('f').files].slice(0,2))items.push({n:f.name,t:await f.text()});

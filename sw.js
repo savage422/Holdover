@@ -2,7 +2,7 @@
 // 1) Android share target: AB / GeoBallistics "Share" -> The Holdover lands here as a POST.
 //    Stash the CSV(s) in a cache, then open the loader, which picks them up.
 // 2) Keeps the loader working with no cell signal at the range.
-const SHELL = 'holdover-shell-v7';
+const SHELL = 'holdover-shell-v9';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
